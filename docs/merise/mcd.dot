@@ -1,0 +1,32 @@
+digraph MCD {
+  graph [rankdir=LR, splines=ortho, nodesep=0.7, ranksep=1.0, bgcolor="white"];
+  node [shape=record, fontname="Helvetica", fontsize=10, color="#2f5d50"];
+  edge [fontname="Helvetica", fontsize=9, color="#4b5563"];
+
+  eleve [label="{ELEVE|# id\\lnumero_dossier [U]\\lnom\\lprenom\\ldate_naissance\\lemail?\\ltelephone?\\lphoto_*?\\lactif\\l}"];
+  classe [label="{CLASSE|# id\\lcode [U]\\lnom\\lniveau\\lannee_scolaire\\lactif\\l}"];
+  inscription [label="{INSCRIPTION|# id\\ldate_inscription\\ldate_fin?\\lannee_scolaire\\lstatut\\l}"];
+  enseignant [label="{ENSEIGNANT|# id\\lmatricule [U]\\lnom\\lprenom\\lemail [U]\\lactif\\l}"];
+  matiere [label="{MATIERE|# id\\lcode [U]\\lnom [U]\\lcoefficient_defaut\\lactif\\l}"];
+  enseignement [label="{ENSEIGNEMENT|# id\\lannee_scolaire\\lcoefficient_matiere\\l}"];
+  note [label="{NOTE|# id\\lperiode\\lvaleur\\lbareme\\lcoefficient\\ldate_evaluation\\llibelle?\\lcommentaire?\\l}"];
+  bulletin [label="{BULLETIN|# id\\lperiode\\ldate_generation\\lstatut\\lmoyenne_generale\\lappreciation?\\l}"];
+  ligne [label="{BULLETIN_LIGNE|# id\\lcode_matiere\\lnom_matiere\\lmoyenne\\lcoefficient\\lnombre_notes\\l}"];
+  responsable [label="{RESPONSABLE|# id\\lnom\\lprenom\\lemail [U]\\ltelephone?\\lactif\\l}"];
+  utilisateur [label="{UTILISATEUR|# id\\lemail_normalise [U]\\lpassword_hash?\\lrole\\lactif\\lcreated_at\\lupdated_at\\l}"];
+  lien [label="{ELEVE_RESPONSABLE|# id\\llien_parente\\lresponsable_principal\\lautorite_parentale\\lcontact_urgence\\l}"];
+
+  eleve -> inscription [label="est inscrit 1 — 0..N"];
+  classe -> inscription [label="accueille 1 — 0..N"];
+  enseignant -> enseignement [label="assure 1 — 0..N"];
+  matiere -> enseignement [label="concerne 1 — 0..N"];
+  classe -> enseignement [label="reçoit 1 — 0..N"];
+  inscription -> note [label="reçoit 1 — 0..N"];
+  enseignement -> note [label="évalue 1 — 0..N"];
+  inscription -> bulletin [label="produit 1 — 0..N"];
+  bulletin -> ligne [label="fige 1 — 1..N"];
+  eleve -> lien [label="a 1 — 0..N"];
+  responsable -> lien [label="protège 1 — 0..N"];
+  utilisateur -> enseignant [label="correspond 0..1 — 0..1"];
+  utilisateur -> responsable [label="correspond 0..1 — 0..1"];
+}

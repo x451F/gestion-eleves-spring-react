@@ -1,0 +1,60 @@
+# Local project workspace
+/.local/
+
+# Secrets and local environment overrides
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Java and Maven build output
+**/target/
+*.class
+.classpath
+.project
+.settings/
+
+# Node dependencies and frontend build output
+**/node_modules/
+/dist/
+/coverage/
+/frontend/dist/
+/frontend/coverage/
+*.tsbuildinfo
+.vite/
+
+# IDE and operating-system metadata
+/.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs, caches, reports, and temporary files
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+.cache/
+.eslintcache
+.npm/
+
+# Runtime uploads and local persistent data
+/uploads/
+/backend/uploads/
+/data/
+/backend/data/
+/postgres-data/
+/docker-data/
+
+# Local source/course PDFs (not project deliverables)
+/Projet-SpringBoot.pdf
+/03_SB_Spring-Data-Jpa.pdf
+/02_SB_fondamentaux.pdf
+/Projet-SpringBoot-2.pdf
+/03_SB_Spring-Data-Jpa-1.pdf
+/02_SB_fondamentaux-1.pdf

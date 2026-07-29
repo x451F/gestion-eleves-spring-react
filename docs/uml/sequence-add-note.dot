@@ -1,0 +1,26 @@
+digraph Sequence {
+  graph [rankdir=TB, bgcolor="white", fontname="Helvetica", label="Séquence - ajouter une note", labelloc=t];
+  node [shape=box, fontname="Helvetica"];
+  edge [fontname="Helvetica", fontsize=9];
+  client [label="Client REST"];
+  controller [label="NoteController"];
+  service [label="NoteService"];
+  ir [label="InscriptionRepository"];
+  er [label="EnseignementRepository"];
+  nr [label="NoteRepository"];
+  db [label="PostgreSQL", shape=cylinder];
+  client -> controller [label="POST /api/notes + NoteRequest"];
+  controller -> service [label="creer(request)"];
+  service -> ir [label="findById(inscriptionId)"];
+  ir -> db [label="SELECT inscription"];
+  db -> ir [label="Inscription"];
+  service -> er [label="findById(enseignementId)"];
+  er -> db [label="SELECT enseignement"];
+  db -> er [label="Enseignement"];
+  service -> service [label="valider classe, année, valeur, coefficient"];
+  service -> nr [label="save(note)"];
+  nr -> db [label="INSERT note"];
+  db -> nr [label="Note persistée"];
+  service -> controller [label="NoteResponse"];
+  controller -> client [label="201 Created + JSON"];
+}

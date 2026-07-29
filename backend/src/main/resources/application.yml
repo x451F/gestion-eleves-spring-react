@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: gestion-eleves-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/gestion_eleves}
+    username: ${DB_USERNAME:gestion_eleves}
+    password: ${DB_PASSWORD:gestion_eleves_dev}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+  servlet:
+    multipart:
+      max-file-size: ${MAX_PHOTO_SIZE:5MB}
+      max-request-size: ${MAX_PHOTO_SIZE:5MB}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+app:
+  cors:
+    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
+  storage:
+    photo-root: ${UPLOAD_DIR:uploads/eleves}
+    max-photo-size: ${MAX_PHOTO_SIZE_BYTES:5242880}
+
+logging:
+  level:
+    org.hibernate.SQL: ${SQL_LOG_LEVEL:DEBUG}
+    org.hibernate.orm.jdbc.bind: ${SQL_BIND_LOG_LEVEL:TRACE}

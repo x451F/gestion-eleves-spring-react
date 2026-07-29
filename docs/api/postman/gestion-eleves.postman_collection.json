@@ -1,0 +1,292 @@
+{
+  "info": {
+    "_postman_id": "9e692792-e40d-4f6e-8a9f-89c8c5bb0931",
+    "name": "Gestion des élèves - API non sécurisée",
+    "description": "Collection de validation du socle métier avant la phase de sécurité.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" },
+    { "key": "eleveId", "value": "" },
+    { "key": "classeId", "value": "" },
+    { "key": "inscriptionId", "value": "" },
+    { "key": "enseignantId", "value": "" },
+    { "key": "matiereId", "value": "" },
+    { "key": "enseignementId", "value": "" },
+    { "key": "noteId", "value": "" },
+    { "key": "responsableId", "value": "" },
+    { "key": "bulletinId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Élève CRUD",
+      "item": [
+        {
+          "name": "Créer un élève",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Créé', () => pm.response.to.have.status(201));",
+                "pm.collectionVariables.set('eleveId', pm.response.json().id);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"numeroDossier\":\"DOS-PM-001\",\"nom\":\"Martin\",\"prenom\":\"Lina\",\"dateNaissance\":\"2012-04-02\",\"email\":\"lina.martin@example.fr\",\"telephone\":\"0611223344\",\"actif\":true}"
+            },
+            "url": "{{baseUrl}}/eleves"
+          }
+        },
+        {
+          "name": "Lister les élèves",
+          "request": { "method": "GET", "url": "{{baseUrl}}/eleves" }
+        },
+        {
+          "name": "Lire un élève",
+          "request": { "method": "GET", "url": "{{baseUrl}}/eleves/{{eleveId}}" }
+        },
+        {
+          "name": "Modifier un élève",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"numeroDossier\":\"DOS-PM-001\",\"nom\":\"Martin\",\"prenom\":\"Lina\",\"dateNaissance\":\"2012-04-02\",\"email\":\"lina.modifiee@example.fr\",\"telephone\":\"0611223344\",\"actif\":true}"
+            },
+            "url": "{{baseUrl}}/eleves/{{eleveId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Parcours scolaire",
+      "item": [
+        {
+          "name": "Créer une classe",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.collectionVariables.set('classeId', pm.response.json().id);"] }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"code\":\"6A-PM-2026\",\"nom\":\"6e A Postman\",\"niveau\":\"6e\",\"anneeScolaire\":\"2026-2027\",\"actif\":true}"
+            },
+            "url": "{{baseUrl}}/classes"
+          }
+        },
+        {
+          "name": "Créer une inscription",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.collectionVariables.set('inscriptionId', pm.response.json().id);"] }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"eleveId\":{{eleveId}},\"classeId\":{{classeId}},\"anneeScolaire\":\"2026-2027\",\"dateInscription\":\"2026-07-29\",\"dateFin\":null,\"statut\":\"ACTIVE\"}"
+            },
+            "url": "{{baseUrl}}/inscriptions"
+          }
+        },
+        {
+          "name": "Créer un enseignant",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.collectionVariables.set('enseignantId', pm.response.json().id);"] }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"matricule\":\"ENS-PM-001\",\"nom\":\"Durand\",\"prenom\":\"Alice\",\"email\":\"alice.postman@example.fr\",\"actif\":true}"
+            },
+            "url": "{{baseUrl}}/enseignants"
+          }
+        },
+        {
+          "name": "Créer une matière",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.collectionVariables.set('matiereId', pm.response.json().id);"] }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"code\":\"MATH-PM\",\"nom\":\"Mathématiques Postman\",\"coefficientDefaut\":2.0,\"actif\":true}"
+            },
+            "url": "{{baseUrl}}/matieres"
+          }
+        },
+        {
+          "name": "Créer un enseignement",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.collectionVariables.set('enseignementId', pm.response.json().id);"] }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"enseignantId\":{{enseignantId}},\"matiereId\":{{matiereId}},\"classeId\":{{classeId}},\"anneeScolaire\":\"2026-2027\",\"coefficientMatiere\":2.0}"
+            },
+            "url": "{{baseUrl}}/enseignements"
+          }
+        },
+        {
+          "name": "Créer une note",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.collectionVariables.set('noteId', pm.response.json().id);"] }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"inscriptionId\":{{inscriptionId}},\"enseignementId\":{{enseignementId}},\"periode\":\"TRIMESTRE_1\",\"valeur\":15.0,\"bareme\":20.0,\"coefficient\":1.0,\"dateEvaluation\":\"2026-07-29\",\"libelle\":\"Contrôle\",\"commentaire\":\"Travail sérieux\"}"
+            },
+            "url": "{{baseUrl}}/notes"
+          }
+        },
+        {
+          "name": "Lire les notes de l’inscription",
+          "request": { "method": "GET", "url": "{{baseUrl}}/inscriptions/{{inscriptionId}}/notes" }
+        },
+        {
+          "name": "Calculer les moyennes",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/inscriptions/{{inscriptionId}}/moyennes?periode=TRIMESTRE_1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Responsables",
+      "item": [
+        {
+          "name": "Créer un responsable",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": ["pm.collectionVariables.set('responsableId', pm.response.json().id);"] }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nom\":\"Martin\",\"prenom\":\"Sophie\",\"email\":\"sophie.postman@example.fr\",\"telephone\":\"0601020304\",\"actif\":true}"
+            },
+            "url": "{{baseUrl}}/responsables"
+          }
+        },
+        {
+          "name": "Associer le responsable à l’élève",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"lienParente\":\"MERE\",\"responsablePrincipal\":true,\"autoriteParentale\":true,\"contactUrgence\":true}"
+            },
+            "url": "{{baseUrl}}/responsables/{{responsableId}}/eleves/{{eleveId}}"
+          }
+        },
+        {
+          "name": "Lister les élèves du responsable",
+          "request": { "method": "GET", "url": "{{baseUrl}}/responsables/{{responsableId}}/eleves" }
+        },
+        {
+          "name": "Dissocier le responsable",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/responsables/{{responsableId}}/eleves/{{eleveId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bulletin",
+      "item": [
+        {
+          "name": "Générer le bulletin",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Bulletin créé', () => pm.response.to.have.status(201));",
+                "pm.collectionVariables.set('bulletinId', pm.response.json().id);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"inscriptionId\":{{inscriptionId}},\"periode\":\"TRIMESTRE_1\",\"appreciation\":\"Bon trimestre\"}"
+            },
+            "url": "{{baseUrl}}/bulletins/generate"
+          }
+        },
+        {
+          "name": "Lire le bulletin",
+          "request": { "method": "GET", "url": "{{baseUrl}}/bulletins/{{bulletinId}}" }
+        },
+        {
+          "name": "Télécharger le PDF",
+          "request": { "method": "GET", "url": "{{baseUrl}}/bulletins/{{bulletinId}}/pdf" }
+        }
+      ]
+    },
+    {
+      "name": "Photo",
+      "item": [
+        {
+          "name": "Téléverser une photo",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "type": "file", "src": "" }]
+            },
+            "url": "{{baseUrl}}/eleves/{{eleveId}}/photo"
+          }
+        },
+        {
+          "name": "Télécharger la photo",
+          "request": { "method": "GET", "url": "{{baseUrl}}/eleves/{{eleveId}}/photo" }
+        },
+        {
+          "name": "Supprimer la photo",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/eleves/{{eleveId}}/photo" }
+        }
+      ]
+    },
+    {
+      "name": "Nettoyage manuel",
+      "description": "À exécuter après les autres dossiers. Les références métier peuvent empêcher certaines suppressions tant qu’elles existent.",
+      "item": [
+        {
+          "name": "Supprimer un élève",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/eleves/{{eleveId}}" }
+        }
+      ]
+    }
+  ]
+}

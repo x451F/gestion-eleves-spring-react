@@ -1,0 +1,22 @@
+digraph UseCases {
+  graph [rankdir=LR, bgcolor="white", fontname="Helvetica", label="Gestion des élèves - cas d'utilisation", labelloc=t];
+  node [fontname="Helvetica"];
+  admin [shape=box, label="Administrateur"];
+  enseignant [shape=box, label="Enseignant"];
+  responsable [shape=box, label="Responsable légal"];
+  subgraph cluster_systeme {
+    label="Application de gestion des élèves";
+    style=rounded;
+    connexion [shape=ellipse, label="Se connecter"];
+    eleves [shape=ellipse, label="Gérer les élèves"];
+    inscriptions [shape=ellipse, label="Gérer les inscriptions"];
+    referentiels [shape=ellipse, label="Gérer les référentiels"];
+    notes [shape=ellipse, label="Saisir et consulter les notes"];
+    bulletins [shape=ellipse, label="Générer et consulter les bulletins"];
+    photo [shape=ellipse, label="Gérer la photo d'un élève"];
+    pdf [shape=ellipse, label="Télécharger un bulletin PDF"];
+  }
+  admin -> connexion; admin -> eleves; admin -> inscriptions; admin -> referentiels; admin -> notes; admin -> bulletins; admin -> photo; admin -> pdf;
+  enseignant -> connexion; enseignant -> notes; enseignant -> bulletins; enseignant -> pdf;
+  responsable -> connexion; responsable -> bulletins; responsable -> pdf;
+}

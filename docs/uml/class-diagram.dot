@@ -1,0 +1,29 @@
+digraph Classes {
+  graph [rankdir=LR, splines=ortho, bgcolor="white", fontname="Helvetica", label="Modèle de classes JPA", labelloc=t];
+  node [shape=record, fontname="Helvetica", fontsize=9];
+  Eleve [label="{Eleve|Long id\\lString numeroDossier\\lString nom\\lString prenom\\lLocalDate dateNaissance\\lphoto metadata\\l}"];
+  Classe [label="{Classe|Long id\\lString code\\lString nom\\lString niveau\\lString anneeScolaire\\l}"];
+  Inscription [label="{Inscription|Long id\\lLocalDate dateInscription\\lString anneeScolaire\\lStatutInscription statut\\l}"];
+  Enseignant [label="{Enseignant|Long id\\lString matricule\\lString nom\\lString prenom\\lString email\\l}"];
+  Matiere [label="{Matiere|Long id\\lString code\\lString nom\\lBigDecimal coefficientDefaut\\l}"];
+  Enseignement [label="{Enseignement|Long id\\lString anneeScolaire\\lBigDecimal coefficientMatiere\\l}"];
+  Note [label="{Note|Long id\\lPeriodeBulletin periode\\lBigDecimal valeur\\lBigDecimal bareme\\lBigDecimal coefficient\\lLocalDate dateEvaluation\\l}"];
+  Bulletin [label="{Bulletin|Long id\\lPeriodeBulletin periode\\lBigDecimal moyenneGenerale\\lStatutBulletin statut\\l}"];
+  BulletinLigne [label="{BulletinLigne|String codeMatiere\\lString nomMatiere\\lBigDecimal moyenne\\lBigDecimal coefficient\\lint nombreNotes\\l}"];
+  Responsable [label="{Responsable|Long id\\lString nom\\lString prenom\\lString email\\l}"];
+  EleveResponsable [label="{EleveResponsable|LienParente lienParente\\lboolean responsablePrincipal\\lboolean autoriteParentale\\l}"];
+  Utilisateur [label="{Utilisateur|Long id\\lString emailNormalise\\lString passwordHash\\lRole role\\lboolean actif\\l}"];
+  Eleve -> Inscription [label="1 / 0..*"];
+  Classe -> Inscription [label="1 / 0..*"];
+  Enseignant -> Enseignement [label="1 / 0..*"];
+  Matiere -> Enseignement [label="1 / 0..*"];
+  Classe -> Enseignement [label="1 / 0..*"];
+  Inscription -> Note [label="1 / 0..*"];
+  Enseignement -> Note [label="1 / 0..*"];
+  Inscription -> Bulletin [label="1 / 0..*"];
+  Bulletin -> BulletinLigne [label="1 / 1..* composition"];
+  Eleve -> EleveResponsable [label="1 / 0..*"];
+  Responsable -> EleveResponsable [label="1 / 0..*"];
+  Utilisateur -> Enseignant [label="0..1 / 0..1"];
+  Utilisateur -> Responsable [label="0..1 / 0..1"];
+}
