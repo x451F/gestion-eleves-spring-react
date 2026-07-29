@@ -79,8 +79,14 @@ Les variables disponibles sont documentées dans `.env.example` :
 | `MAX_PHOTO_SIZE` | `5MB` | limite multipart Spring |
 | `MAX_PHOTO_SIZE_BYTES` | `5242880` | taille métier maximale |
 | `SERVER_PORT` | `8080` | port HTTP |
+| `SQL_LOG_LEVEL` | `WARN` | niveau des requêtes Hibernate |
+| `SQL_BIND_LOG_LEVEL` | `WARN` | niveau des paramètres Hibernate |
 
 Ne jamais versionner un fichier `.env` réel.
+
+Les valeurs par défaut de journalisation ne tracent pas les requêtes SQL ni
+leurs paramètres, afin d’éviter d’écrire des données métier dans les logs.
+Un niveau plus détaillé ne doit être utilisé que ponctuellement en local.
 
 ## Démarrage de PostgreSQL
 
@@ -94,6 +100,25 @@ docker compose ps
 
 Attendre l’état `healthy` avant de lancer l’API. Le volume nommé
 `postgres_data` conserve les données entre les redémarrages.
+
+### Port PostgreSQL déjà occupé
+
+Si le port hôte `5432` est déjà utilisé, publier PostgreSQL sur un autre port,
+par exemple `5433` :
+
+```bash
+POSTGRES_PORT=5433 docker compose up -d
+```
+
+L’API doit alors utiliser le même port publié :
+
+```bash
+cd backend
+DB_URL=jdbc:postgresql://localhost:5433/gestion_eleves ./mvnw spring-boot:run
+```
+
+Les identifiants JDBC peuvent également être fournis avec `DB_USERNAME` et
+`DB_PASSWORD`. Ne jamais publier de valeurs réelles.
 
 ## Démarrage du backend
 

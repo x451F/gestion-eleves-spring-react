@@ -31,5 +31,5 @@ app:
 
 logging:
   level:
-    org.hibernate.SQL: ${SQL_LOG_LEVEL:DEBUG}
-    org.hibernate.orm.jdbc.bind: ${SQL_BIND_LOG_LEVEL:TRACE}
+    org.hibernate.SQL: ${SQL_LOG_LEVEL:WARN}
+    org.hibernate.orm.jdbc.bind: ${SQL_BIND_LOG_LEVEL:WARN}
