@@ -1,0 +1,50 @@
+@startuml
+title Séquence — ajouter une note
+autonumber
+
+actor "Client REST" as client
+participant "NoteController" as controller
+participant "NoteService" as service
+participant "InscriptionRepository" as inscriptionRepository
+participant "EnseignementRepository" as enseignementRepository
+participant "NoteRepository" as noteRepository
+database "PostgreSQL" as database
+
+client -> controller : POST /api/notes\nNoteRequest
+activate controller
+controller -> service : creer(request)
+activate service
+
+service -> inscriptionRepository : findById(inscriptionId)
+activate inscriptionRepository
+inscriptionRepository -> database : SELECT inscription
+database --> inscriptionRepository : Inscription
+inscriptionRepository --> service : Inscription
+deactivate inscriptionRepository
+
+service -> enseignementRepository : findById(enseignementId)
+activate enseignementRepository
+enseignementRepository -> database : SELECT enseignement
+database --> enseignementRepository : Enseignement
+enseignementRepository --> service : Enseignement
+deactivate enseignementRepository
+
+service -> service : valider classe, année,\nvaleur et coefficient
+
+alt Données invalides ou incohérentes
+  service --> controller : erreur métier
+  controller --> client : 400 Bad Request
+else Données valides
+  service -> noteRepository : save(note)
+  activate noteRepository
+  noteRepository -> database : INSERT note
+  database --> noteRepository : note persistée
+  noteRepository --> service : Note
+  deactivate noteRepository
+  service --> controller : NoteResponse
+  controller --> client : 201 Created + JSON
+end
+
+deactivate service
+deactivate controller
+@enduml

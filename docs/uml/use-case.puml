@@ -1,0 +1,40 @@
+@startuml
+title Gestion des élèves — cas d'utilisation
+left to right direction
+
+skinparam packageStyle rectangle
+
+actor "Administrateur" as admin
+actor "Enseignant" as enseignant
+actor "Responsable légal" as responsable
+
+rectangle "Application de gestion des élèves" {
+  usecase "Gérer les élèves" as UC_ELEVES
+  usecase "Gérer les inscriptions" as UC_INSCRIPTIONS
+  usecase "Gérer les référentiels" as UC_REFERENTIELS
+  usecase "Saisir et consulter\nles notes" as UC_NOTES
+  usecase "Générer et consulter\nles bulletins" as UC_BULLETINS
+  usecase "Gérer la photo\nd'un élève" as UC_PHOTO
+  usecase "Télécharger un\nbulletin PDF" as UC_PDF
+}
+
+admin --> UC_ELEVES
+admin --> UC_INSCRIPTIONS
+admin --> UC_REFERENTIELS
+admin --> UC_NOTES
+admin --> UC_BULLETINS
+admin --> UC_PHOTO
+admin --> UC_PDF
+
+enseignant --> UC_NOTES
+enseignant --> UC_BULLETINS
+enseignant --> UC_PDF
+
+responsable --> UC_BULLETINS
+responsable --> UC_PDF
+
+note bottom
+  Cette vue décrit les rôles métier cibles.
+  L'authentification et l'autorisation ne sont pas encore implémentées.
+end note
+@enduml

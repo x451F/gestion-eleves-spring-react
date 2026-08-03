@@ -202,7 +202,8 @@ normalisé.
 - MLD : `docs/merise/mld.md` ;
 - MPD : `docs/merise/mpd.sql` ;
 - UML : `docs/uml/use-case.svg`, `class-diagram.svg` et
-  `sequence-add-note.svg`, avec leurs sources DOT.
+  `sequence-add-note.svg`, avec leurs sources PlantUML (`.puml`). Les sources
+  DOT sont conservées pour compatibilité.
 
 ## État de la sécurité
 

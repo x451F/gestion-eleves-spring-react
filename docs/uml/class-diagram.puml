@@ -1,0 +1,125 @@
+@startuml
+title Modèle de classes JPA
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+class Eleve {
+  +Long id
+  +String numeroDossier
+  +String nom
+  +String prenom
+  +LocalDate dateNaissance
+  +String email
+  +String telephone
+  +boolean actif
+  +photo metadata
+}
+
+class Classe {
+  +Long id
+  +String code
+  +String nom
+  +String niveau
+  +String anneeScolaire
+  +boolean actif
+}
+
+class Inscription {
+  +Long id
+  +String anneeScolaire
+  +LocalDate dateInscription
+  +LocalDate dateFin
+  +StatutInscription statut
+}
+
+class Enseignant {
+  +Long id
+  +String matricule
+  +String nom
+  +String prenom
+  +String email
+  +boolean actif
+}
+
+class Matiere {
+  +Long id
+  +String code
+  +String nom
+  +BigDecimal coefficientDefaut
+  +boolean actif
+}
+
+class Enseignement {
+  +Long id
+  +String anneeScolaire
+  +BigDecimal coefficientMatiere
+}
+
+class Note {
+  +Long id
+  +PeriodeBulletin periode
+  +BigDecimal valeur
+  +BigDecimal bareme
+  +BigDecimal coefficient
+  +LocalDate dateEvaluation
+  +String libelle
+}
+
+class Bulletin {
+  +Long id
+  +PeriodeBulletin periode
+  +LocalDateTime dateGeneration
+  +BigDecimal moyenneGenerale
+  +StatutBulletin statut
+}
+
+class BulletinLigne {
+  +Long id
+  +String codeMatiere
+  +String nomMatiere
+  +BigDecimal moyenne
+  +BigDecimal coefficient
+  +int nombreNotes
+}
+
+class Responsable {
+  +Long id
+  +String nom
+  +String prenom
+  +String email
+  +String telephone
+  +boolean actif
+}
+
+class EleveResponsable {
+  +Long id
+  +LienParente lienParente
+  +boolean responsablePrincipal
+  +boolean autoriteParentale
+  +boolean contactUrgence
+}
+
+class Utilisateur {
+  +Long id
+  +String emailNormalise
+  +String passwordHash
+  +Role role
+  +boolean actif
+  +LocalDateTime lastLoginAt
+}
+
+Eleve "1" -- "0..*" Inscription
+Classe "1" -- "0..*" Inscription
+Enseignant "1" -- "0..*" Enseignement
+Matiere "1" -- "0..*" Enseignement
+Classe "1" -- "0..*" Enseignement
+Inscription "1" -- "0..*" Note
+Enseignement "1" -- "0..*" Note
+Inscription "1" -- "0..*" Bulletin
+Bulletin "1" *-- "1..*" BulletinLigne
+Eleve "1" -- "0..*" EleveResponsable
+Responsable "1" -- "0..*" EleveResponsable
+Utilisateur "0..1" -- "0..1" Enseignant
+Utilisateur "0..1" -- "0..1" Responsable
+@enduml
