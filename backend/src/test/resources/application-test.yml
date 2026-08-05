@@ -6,6 +6,11 @@ spring:
     enabled: true
 
 app:
+  security:
+    jwt:
+      issuer: gestion-eleves-api-test
+      # Deterministic 32-byte key used only by the test profile.
+      secret-base64: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
   storage:
     photo-root: ${java.io.tmpdir}/gestion-eleves-test-photos
     max-photo-size: 5242880

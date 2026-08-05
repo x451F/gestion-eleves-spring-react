@@ -1,9 +1,11 @@
 package fr.afpa.gestioneleves.exception;
 
+import fr.afpa.gestioneleves.security.AuthenticationFailedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -12,10 +14,21 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.time.Instant;
+import java.net.URI;
 import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(AuthenticationFailedException.class)
+    ResponseEntity<ProblemDetail> authenticationFailed(AuthenticationFailedException ex) {
+        ProblemDetail detail = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
+        detail.setType(URI.create("urn:problem:authentication_failed"));
+        detail.setTitle("Échec de l’authentification");
+        detail.setDetail("Les identifiants fournis sont invalides.");
+        detail.setProperty("code", "authentication_failed");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(detail);
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     ResponseEntity<ApiError> notFound(ResourceNotFoundException ex, HttpServletRequest request) {

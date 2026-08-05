@@ -1,6 +1,8 @@
 spring:
   application:
     name: gestion-eleves-api
+  config:
+    import: "optional:configtree:${APP_SECRET_CONFIGTREE_PATH:/run/secrets/}"
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/gestion_eleves}
     username: ${DB_USERNAME:gestion_eleves}
@@ -28,6 +30,12 @@ app:
   storage:
     photo-root: ${UPLOAD_DIR:uploads/eleves}
     max-photo-size: ${MAX_PHOTO_SIZE_BYTES:5242880}
+  security:
+    jwt:
+      issuer: ${APP_SECURITY_JWT_ISSUER:gestion-eleves-api}
+      # Base64 of at least 32 cryptographically random bytes; provide through configtree or this environment property.
+      secret-base64: ${APP_SECURITY_JWT_SECRET_BASE64:}
+      access-token-lifetime: 15m
 
 logging:
   level:
