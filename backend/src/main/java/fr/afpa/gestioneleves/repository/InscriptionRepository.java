@@ -7,8 +7,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
+import java.util.Optional;
 
 public interface InscriptionRepository extends JpaRepository<Inscription, Long> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select i from Inscription i where i.id = :id")
+    Optional<Inscription> findByIdForUpdate(@Param("id") Long id);
+    Optional<Inscription> findByEleveIdAndStatut(Long eleveId, StatutInscription statut);
     boolean existsByEleveIdAndAnneeScolaireAndStatut(Long eleveId, String anneeScolaire, StatutInscription statut);
     boolean existsByEleveIdAndAnneeScolaireAndStatutAndIdNot(Long eleveId, String anneeScolaire, StatutInscription statut, Long id);
     List<Inscription> findByEleveIdOrderByAnneeScolaireDesc(Long eleveId);

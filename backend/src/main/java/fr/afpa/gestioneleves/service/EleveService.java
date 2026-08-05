@@ -83,6 +83,11 @@ public class EleveService {
                 .orElseThrow(() -> new ResourceNotFoundException("Élève introuvable : " + id));
     }
 
+    public Eleve verrouiller(Long id) {
+        return repository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Élève introuvable : " + id));
+    }
+
     private void appliquer(Eleve eleve, EleveRequest request) {
         eleve.setNumeroDossier(request.numeroDossier().trim().toUpperCase());
         eleve.setNom(request.nom().trim());

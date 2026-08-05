@@ -4,9 +4,15 @@ import fr.afpa.gestioneleves.entity.Eleve;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
+import java.util.Optional;
 import java.util.List;
 
 public interface EleveRepository extends JpaRepository<Eleve, Long> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from Eleve e where e.id = :id")
+    Optional<Eleve> findByIdForUpdate(@Param("id") Long id);
     boolean existsByNumeroDossierIgnoreCase(String numeroDossier);
     boolean existsByNumeroDossierIgnoreCaseAndIdNot(String numeroDossier, Long id);
     @Query("select distinct i.eleve from Inscription i join Enseignement e on e.classe.id = i.classe.id and e.anneeScolaire = i.anneeScolaire where e.enseignant.utilisateur.id = :userId")

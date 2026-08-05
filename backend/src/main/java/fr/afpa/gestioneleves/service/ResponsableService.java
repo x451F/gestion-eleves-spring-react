@@ -8,6 +8,7 @@ import fr.afpa.gestioneleves.entity.EleveResponsable;
 import fr.afpa.gestioneleves.entity.Responsable;
 import fr.afpa.gestioneleves.exception.DuplicateResourceException;
 import fr.afpa.gestioneleves.exception.ResourceNotFoundException;
+import fr.afpa.gestioneleves.exception.BusinessRuleException;
 import fr.afpa.gestioneleves.mapper.DomainMapper;
 import fr.afpa.gestioneleves.repository.EleveResponsableRepository;
 import fr.afpa.gestioneleves.repository.ResponsableRepository;
@@ -53,12 +54,34 @@ public class ResponsableService {
         lien.setLienParente(r.lienParente()); lien.setResponsablePrincipal(r.responsablePrincipal());
         lien.setAutoriteParentale(r.autoriteParentale()); lien.setContactUrgence(r.contactUrgence());
         lien.setValidFrom(LocalDate.now());
+        if (r.responsablePrincipal()) definirPrincipalVerrouille(eleveId, responsableId, lien);
         return mapper.toResponse(lienRepository.save(lien));
     }
     public void dissocier(Long responsableId, Long eleveId) {
+        eleveService.verrouiller(eleveId);
         EleveResponsable lien = lienRepository.findByEleveIdAndResponsableId(eleveId, responsableId)
                 .orElseThrow(() -> new ResourceNotFoundException("Association responsable-élève introuvable"));
-        lienRepository.delete(lien);
+        if (lien.getValidTo() != null && !lien.getValidTo().isAfter(LocalDate.now())) return;
+        lien.setValidTo(LocalDate.now());
+        lien.setResponsablePrincipal(false);
+        lienRepository.save(lien);
+    }
+    public EleveResponsableResponse terminerLien(Long responsableId, Long eleveId, LocalDate dateFin) {
+        eleveService.verrouiller(eleveId);
+        EleveResponsable lien = lienRepository.findByEleveIdAndResponsableId(eleveId, responsableId)
+                .orElseThrow(() -> new ResourceNotFoundException("Association responsable-élève introuvable"));
+        if (dateFin.isBefore(lien.getValidFrom())) throw new BusinessRuleException("La date de fin ne peut pas précéder le début de la relation");
+        if (lien.getValidTo() != null && !lien.getValidTo().isAfter(dateFin)) return mapper.toResponse(lien);
+        lien.setValidTo(dateFin); lien.setResponsablePrincipal(false);
+        return mapper.toResponse(lienRepository.save(lien));
+    }
+    public EleveResponsableResponse definirPrincipal(Long responsableId, Long eleveId) {
+        eleveService.verrouiller(eleveId);
+        EleveResponsable cible = lienRepository.findByEleveIdAndResponsableId(eleveId, responsableId)
+                .orElseThrow(() -> new ResourceNotFoundException("Association responsable-élève introuvable"));
+        if (!actif(cible)) throw new BusinessRuleException("Le responsable doit avoir une relation active avec l'élève");
+        definirPrincipalVerrouille(eleveId, responsableId, cible);
+        return mapper.toResponse(lienRepository.save(cible));
     }
     @Transactional(readOnly = true)
     public List<EleveResponsableResponse> eleves(Long responsableId) {
@@ -74,6 +97,19 @@ public class ResponsableService {
     }
     public Responsable trouver(Long id) {
         return repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Responsable introuvable : " + id));
+    }
+    private void definirPrincipalVerrouille(Long eleveId, Long responsableId, EleveResponsable cible) {
+        for (EleveResponsable lien : lienRepository.findByEleveIdForUpdate(eleveId)) {
+            if (actif(lien) && lien.isResponsablePrincipal() && !lien.getResponsable().getId().equals(responsableId)) {
+                lien.setResponsablePrincipal(false);
+            }
+        }
+        lienRepository.flush();
+        cible.setResponsablePrincipal(true);
+    }
+    private boolean actif(EleveResponsable lien) {
+        LocalDate now = LocalDate.now();
+        return !lien.getValidFrom().isAfter(now) && (lien.getValidTo() == null || lien.getValidTo().isAfter(now));
     }
     private void appliquer(Responsable responsable, ResponsableRequest r) {
         responsable.setNom(r.nom().trim()); responsable.setPrenom(r.prenom().trim());

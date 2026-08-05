@@ -2,6 +2,7 @@ package fr.afpa.gestioneleves.controller;
 
 import fr.afpa.gestioneleves.dto.request.AssociationResponsableRequest;
 import fr.afpa.gestioneleves.dto.request.ResponsableRequest;
+import fr.afpa.gestioneleves.dto.request.DateFinRequest;
 import fr.afpa.gestioneleves.dto.response.EleveResponsableResponse;
 import fr.afpa.gestioneleves.dto.response.ResponsableResponse;
 import fr.afpa.gestioneleves.service.ResponsableService;
@@ -38,6 +39,14 @@ public class ResponsableController {
     @DeleteMapping("/{responsableId}/eleves/{eleveId}")
     public ResponseEntity<Void> dissocier(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long responsableId, @PathVariable Long eleveId) {
         access.admin(actor); service.dissocier(responsableId, eleveId); return ResponseEntity.noContent().build();
+    }
+    @PostMapping("/{responsableId}/eleves/{eleveId}/end")
+    public EleveResponsableResponse terminerLien(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long responsableId, @PathVariable Long eleveId, @Valid @RequestBody DateFinRequest r) {
+        access.admin(actor); return service.terminerLien(responsableId, eleveId, r.dateFin());
+    }
+    @PostMapping("/{responsableId}/eleves/{eleveId}/principal")
+    public EleveResponsableResponse definirPrincipal(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long responsableId, @PathVariable Long eleveId) {
+        access.admin(actor); return service.definirPrincipal(responsableId, eleveId);
     }
     @GetMapping("/{id}/eleves") public List<EleveResponsableResponse> eleves(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) { access.guardianProfile(actor, id); return actor != null && actor.role() == fr.afpa.gestioneleves.enumtype.Role.RESPONSABLE ? service.elevesActifs(actor) : service.eleves(id); }
 }
