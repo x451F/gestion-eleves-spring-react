@@ -6,3 +6,8 @@ spring:
 logging:
   level:
     fr.afpa.gestioneleves: DEBUG
+
+app:
+  security:
+    refresh-cookie:
+      secure: false

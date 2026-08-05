@@ -8,6 +8,7 @@ import fr.afpa.gestioneleves.enumtype.Role;
 import fr.afpa.gestioneleves.enumtype.StatutUtilisateur;
 import fr.afpa.gestioneleves.repository.UtilisateurRepository;
 import fr.afpa.gestioneleves.security.PasswordPolicy;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -37,6 +38,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -73,13 +75,16 @@ class AuthenticationIntegrationTest {
     void activeAccountCanLoginReceiveOnlyRequiredClaimsAndAccessCurrentUserWithoutSession() throws Exception {
         Utilisateur user = createUser("alice@example.fr", Role.ADMIN, StatutUtilisateur.ACTIF, 0, PASSWORD);
 
+        Csrf csrf = csrf();
         var login = mockMvc.perform(post("/api/auth/login")
+                        .cookie(csrf.cookie())
+                        .header(csrf.headerName(), csrf.token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"alice@example.fr\",\"password\":\"correct horse battery staple\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andExpect(jsonPath("$.expiresInSeconds").value(900))
-                .andExpect(header().doesNotExist("Set-Cookie"))
+                .andExpect(header().string("Set-Cookie", containsString("refresh_token=")))
                 .andReturn();
 
         JsonNode body = objectMapper.readTree(login.getResponse().getContentAsString());
@@ -114,7 +119,8 @@ class AuthenticationIntegrationTest {
         createUser("pending@example.fr", Role.ADMIN, StatutUtilisateur.EN_ATTENTE_ACTIVATION, 0, null);
         createUser("disabled@example.fr", Role.ADMIN, StatutUtilisateur.DESACTIVE, 0, PASSWORD);
 
-        mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+        Csrf csrf = csrf();
+        mockMvc.perform(post("/api/auth/login").cookie(csrf.cookie()).header(csrf.headerName(), csrf.token()).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"  ALICE@EXAMPLE.FR \",\"password\":\"correct horse battery staple\"}"))
                 .andExpect(status().isOk());
 
@@ -210,12 +216,27 @@ class AuthenticationIntegrationTest {
     }
 
     private String failedLogin(String email, String password) throws Exception {
-        return mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+        Csrf csrf = csrf();
+        return mockMvc.perform(post("/api/auth/login").cookie(csrf.cookie()).header(csrf.headerName(), csrf.token()).contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("email", email, "password", password))))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().doesNotExist("Set-Cookie"))
                 .andExpect(jsonPath("$.code").value("authentication_failed"))
                 .andReturn().getResponse().getContentAsString();
+    }
+
+    private Csrf csrf() throws Exception {
+        var bootstrap = mockMvc.perform(get("/api/auth/csrf"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.headerName").value("X-XSRF-TOKEN"))
+                .andReturn();
+        Cookie cookie = bootstrap.getResponse().getCookie("XSRF-TOKEN");
+        assertThat(cookie).isNotNull();
+        String token = objectMapper.readTree(bootstrap.getResponse().getContentAsString()).get("token").asText();
+        return new Csrf(cookie, "X-XSRF-TOKEN", token);
+    }
+
+    private record Csrf(Cookie cookie, String headerName, String token) {
     }
 
     private boolean matchesWithoutThrowing(String rawPassword, String storedHash) {

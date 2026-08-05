@@ -24,19 +24,22 @@ public class AuthenticationService {
     private final UtilisateurRepository utilisateurRepository;
     private final PasswordEncoder passwordEncoder;
     private final AccessTokenService accessTokenService;
+    private final RefreshSessionService refreshSessionService;
     private final Clock clock;
     private final String dummyPasswordHash;
 
     public AuthenticationService(UtilisateurRepository utilisateurRepository, PasswordEncoder passwordEncoder,
-                                 AccessTokenService accessTokenService, Clock clock) {
+                                 AccessTokenService accessTokenService, RefreshSessionService refreshSessionService,
+                                 Clock clock) {
         this.utilisateurRepository = utilisateurRepository;
         this.passwordEncoder = passwordEncoder;
         this.accessTokenService = accessTokenService;
+        this.refreshSessionService = refreshSessionService;
         this.clock = clock;
         this.dummyPasswordHash = passwordEncoder.encode(DUMMY_PASSWORD);
     }
 
-    public LoginResponse login(LoginRequest request) {
+    public LoginResult login(LoginRequest request) {
         String email = canonicalizeEmail(request == null ? null : request.email());
         String password = request == null ? null : request.password();
         Optional<Utilisateur> account = email == null ? Optional.empty() : utilisateurRepository.findByEmailNormalise(email);
@@ -50,7 +53,8 @@ public class AuthenticationService {
 
         utilisateur.setLastLoginAt(LocalDateTime.ofInstant(clock.instant(), clock.getZone()));
         AccessTokenService.IssuedAccessToken token = accessTokenService.issue(utilisateur);
-        return new LoginResponse(token.value(), "Bearer", token.expiresInSeconds());
+        RefreshSessionService.IssuedRefreshToken refreshToken = refreshSessionService.createFamily(utilisateur);
+        return new LoginResult(new LoginResponse(token.value(), "Bearer", token.expiresInSeconds()), refreshToken.rawToken());
     }
 
     private boolean safelyMatches(String password, String hash) {
@@ -67,5 +71,8 @@ public class AuthenticationService {
         }
         String normalized = email.trim().toLowerCase(Locale.ROOT);
         return normalized.isBlank() ? null : normalized;
+    }
+
+    public record LoginResult(LoginResponse response, String refreshToken) {
     }
 }

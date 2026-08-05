@@ -1,6 +1,8 @@
 package fr.afpa.gestioneleves.exception;
 
 import fr.afpa.gestioneleves.security.AuthenticationFailedException;
+import fr.afpa.gestioneleves.security.RefreshAuthenticationFailedException;
+import fr.afpa.gestioneleves.security.RefreshCookieService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -19,15 +21,34 @@ import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private final RefreshCookieService refreshCookieService;
+
+    public GlobalExceptionHandler(RefreshCookieService refreshCookieService) {
+        this.refreshCookieService = refreshCookieService;
+    }
+
+    @ExceptionHandler(RefreshAuthenticationFailedException.class)
+    ResponseEntity<ProblemDetail> refreshAuthenticationFailed(RefreshAuthenticationFailedException ex) {
+        return authenticationFailureResponse(true);
+    }
 
     @ExceptionHandler(AuthenticationFailedException.class)
     ResponseEntity<ProblemDetail> authenticationFailed(AuthenticationFailedException ex) {
+        return authenticationFailureResponse(false);
+    }
+
+    private ResponseEntity<ProblemDetail> authenticationFailureResponse(boolean clearRefreshCookie) {
         ProblemDetail detail = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
         detail.setType(URI.create("urn:problem:authentication_failed"));
         detail.setTitle("Échec de l’authentification");
         detail.setDetail("Les identifiants fournis sont invalides.");
         detail.setProperty("code", "authentication_failed");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(detail);
+        if (!clearRefreshCookie) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(detail);
+        }
+        var headers = new org.springframework.http.HttpHeaders();
+        refreshCookieService.addClearedCookie(headers);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).headers(headers).body(detail);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)

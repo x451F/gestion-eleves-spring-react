@@ -21,6 +21,11 @@ import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.util.matcher.AndRequestMatcher;
+import org.springframework.security.config.Customizer;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -81,15 +86,37 @@ public class SecurityConfiguration {
     }
 
     @Bean
+    CookieCsrfTokenRepository csrfTokenRepository(RefreshCookieProperties refreshCookieProperties) {
+        CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        repository.setCookieCustomizer(cookie -> cookie.path("/")
+                .sameSite("Strict")
+                .secure(refreshCookieProperties.secure()));
+        return repository;
+    }
+
+    @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtDecoder jwtDecoder,
                                             AccessJwtAuthenticationConverter jwtAuthenticationConverter,
-                                            ProblemDetailAuthenticationEntryPoint authenticationEntryPoint) throws Exception {
+                                            ProblemDetailAuthenticationEntryPoint authenticationEntryPoint,
+                                            ProblemDetailAccessDeniedHandler accessDeniedHandler,
+                                            CookieCsrfTokenRepository csrfTokenRepository,
+                                            BearerCsrfProtectionFilter bearerCsrfProtectionFilter) throws Exception {
         return http
-                .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(csrfTokenRepository)
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                        .requireCsrfProtectionMatcher(new AndRequestMatcher(
+                                CsrfFilter.DEFAULT_CSRF_MATCHER,
+                                request -> request.getRequestURI().startsWith(request.getContextPath() + "/api/auth/"))))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler))
+                .addFilterAfter(bearerCsrfProtectionFilter, CsrfFilter.class)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/auth/me").authenticated()
+                        .requestMatchers("/api/auth/login", "/api/auth/csrf", "/api/auth/refresh", "/api/auth/logout").permitAll()
+                        .requestMatchers("/api/auth/me", "/api/auth/logout-all").authenticated()
                         .anyRequest().permitAll())
                 .oauth2ResourceServer(resourceServer -> resourceServer
                         .authenticationEntryPoint(authenticationEntryPoint)

@@ -26,7 +26,8 @@ server:
 
 app:
   cors:
-    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
+    allowed-origins:
+      - ${FRONTEND_ORIGIN:http://localhost:5173}
   storage:
     photo-root: ${UPLOAD_DIR:uploads/eleves}
     max-photo-size: ${MAX_PHOTO_SIZE_BYTES:5242880}
@@ -36,6 +37,12 @@ app:
       # Base64 of at least 32 cryptographically random bytes; provide through configtree or this environment property.
       secret-base64: ${APP_SECURITY_JWT_SECRET_BASE64:}
       access-token-lifetime: 15m
+    refresh-cookie:
+      name: refresh_token
+      path: /api/auth
+      lifetime: 7d
+      secure: true
+      same-site: Strict
 
 logging:
   level:
