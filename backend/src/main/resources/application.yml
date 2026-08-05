@@ -20,6 +20,12 @@ spring:
     multipart:
       max-file-size: ${MAX_PHOTO_SIZE:5MB}
       max-request-size: ${MAX_PHOTO_SIZE:5MB}
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    properties:
+      mail.smtp.auth: false
+      mail.smtp.starttls.enable: false
 
 server:
   port: ${SERVER_PORT:8080}
@@ -43,6 +49,10 @@ app:
       lifetime: 7d
       secure: true
       same-site: Strict
+  mail:
+    sender: ${MAIL_SENDER:no-reply@gestion-eleves.local}
+    activation-url: ${APP_MAIL_ACTIVATION_URL:http://localhost:5173/activation}
+    reset-url: ${APP_MAIL_RESET_URL:http://localhost:5173/reinitialisation-mot-de-passe}
 
 logging:
   level:

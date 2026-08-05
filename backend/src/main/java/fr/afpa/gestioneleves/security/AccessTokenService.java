@@ -7,12 +7,14 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
 
 @Service
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class AccessTokenService {
     private final JwtEncoder jwtEncoder;
     private final JwtProperties properties;

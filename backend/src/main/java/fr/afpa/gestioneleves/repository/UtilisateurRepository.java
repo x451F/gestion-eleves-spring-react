@@ -11,6 +11,10 @@ import java.util.Optional;
 
 public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> {
     Optional<Utilisateur> findByEmailNormalise(String emailNormalise);
+    boolean existsByRole(fr.afpa.gestioneleves.enumtype.Role role);
+
+    @Query(value = "select pg_advisory_xact_lock(814204)", nativeQuery = true)
+    Object lockBootstrapAdminCreation();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select utilisateur from Utilisateur utilisateur where utilisateur.id = :id")

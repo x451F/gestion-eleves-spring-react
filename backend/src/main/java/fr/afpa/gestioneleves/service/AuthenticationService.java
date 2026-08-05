@@ -9,6 +9,7 @@ import fr.afpa.gestioneleves.security.AccessTokenService;
 import fr.afpa.gestioneleves.security.AuthenticationFailedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -18,6 +19,7 @@ import java.util.Optional;
 
 @Service
 @Transactional
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class AuthenticationService {
     private static final String DUMMY_PASSWORD = "invalid-password-for-timing-only";
 

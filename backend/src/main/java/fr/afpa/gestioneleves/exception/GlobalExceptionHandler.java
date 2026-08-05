@@ -3,6 +3,7 @@ package fr.afpa.gestioneleves.exception;
 import fr.afpa.gestioneleves.security.AuthenticationFailedException;
 import fr.afpa.gestioneleves.security.RefreshAuthenticationFailedException;
 import fr.afpa.gestioneleves.security.RefreshCookieService;
+import fr.afpa.gestioneleves.exception.InvalidAccountTokenException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -35,6 +36,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationFailedException.class)
     ResponseEntity<ProblemDetail> authenticationFailed(AuthenticationFailedException ex) {
         return authenticationFailureResponse(false);
+    }
+
+    @ExceptionHandler(InvalidAccountTokenException.class)
+    ResponseEntity<ProblemDetail> invalidAccountToken(InvalidAccountTokenException ex) {
+        ProblemDetail detail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        detail.setType(URI.create("urn:problem:invalid_account_token"));
+        detail.setTitle("Lien invalide");
+        detail.setDetail("Ce lien est invalide ou expiré.");
+        detail.setProperty("code", "invalid_account_token");
+        return ResponseEntity.badRequest().body(detail);
     }
 
     private ResponseEntity<ProblemDetail> authenticationFailureResponse(boolean clearRefreshCookie) {

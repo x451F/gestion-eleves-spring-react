@@ -1,6 +1,10 @@
 package fr.afpa.gestioneleves.controller;
 
 import fr.afpa.gestioneleves.dto.request.LoginRequest;
+import fr.afpa.gestioneleves.dto.request.ActivationRequest;
+import fr.afpa.gestioneleves.dto.request.ForgotPasswordRequest;
+import fr.afpa.gestioneleves.dto.request.ResetPasswordRequest;
+import fr.afpa.gestioneleves.dto.response.AccountWorkflowResponse;
 import fr.afpa.gestioneleves.dto.response.CurrentUserResponse;
 import fr.afpa.gestioneleves.dto.response.LoginResponse;
 import fr.afpa.gestioneleves.security.AuthenticatedUser;
@@ -10,6 +14,8 @@ import fr.afpa.gestioneleves.security.AuthenticationFailedException;
 import fr.afpa.gestioneleves.security.RefreshAuthenticationFailedException;
 import fr.afpa.gestioneleves.service.AuthenticationService;
 import fr.afpa.gestioneleves.service.RefreshSessionService;
+import fr.afpa.gestioneleves.service.AccountRecoveryService;
+import fr.afpa.gestioneleves.service.AccountMailService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,24 +28,32 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.web.util.WebUtils;
 
 @RestController
 @RequestMapping("/api/auth")
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class AuthenticationController {
     private final AuthenticationService authenticationService;
     private final RefreshSessionService refreshSessionService;
     private final AccessTokenService accessTokenService;
     private final RefreshCookieService refreshCookieService;
+    private final AccountRecoveryService recoveryService;
+    private final AccountMailService mailService;
 
     public AuthenticationController(AuthenticationService authenticationService,
                                     RefreshSessionService refreshSessionService,
                                     AccessTokenService accessTokenService,
-                                    RefreshCookieService refreshCookieService) {
+                                    RefreshCookieService refreshCookieService,
+                                    AccountRecoveryService recoveryService,
+                                    AccountMailService mailService) {
         this.authenticationService = authenticationService;
         this.refreshSessionService = refreshSessionService;
         this.accessTokenService = accessTokenService;
         this.refreshCookieService = refreshCookieService;
+        this.recoveryService = recoveryService;
+        this.mailService = mailService;
     }
 
     @PostMapping("/login")
@@ -90,6 +104,27 @@ public class AuthenticationController {
     @GetMapping("/me")
     public CurrentUserResponse currentUser(@AuthenticationPrincipal AuthenticatedUser user) {
         return new CurrentUserResponse(user.id(), user.email(), user.role(), user.status());
+    }
+
+    @PostMapping("/activate")
+    public ResponseEntity<Void> activate(@RequestBody(required = false) ActivationRequest request) {
+        recoveryService.activate(request == null ? null : request.token(), request == null ? null : request.password());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/forgot-password")
+    public AccountWorkflowResponse forgotPassword(@RequestBody(required = false) ForgotPasswordRequest request) {
+        recoveryService.requestPasswordReset(request == null ? null : request.email())
+                .ifPresent(reset -> mailService.sendPasswordReset(reset.user(), reset.rawToken()));
+        return new AccountWorkflowResponse("Si un compte actif correspond à cette adresse, un e-mail de réinitialisation a été envoyé.");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@RequestBody(required = false) ResetPasswordRequest request) {
+        recoveryService.resetPassword(request == null ? null : request.token(), request == null ? null : request.password());
+        HttpHeaders headers = new HttpHeaders();
+        refreshCookieService.addClearedCookie(headers);
+        return ResponseEntity.noContent().headers(headers).build();
     }
 
     private String refreshToken(HttpServletRequest request) {

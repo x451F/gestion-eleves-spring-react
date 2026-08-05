@@ -8,6 +8,7 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.MissingCsrfTokenException;
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -20,6 +21,7 @@ import java.security.MessageDigest;
  * deliberately remains cookie-affecting, so it retains the same CSRF contract.
  */
 @Component
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class BearerCsrfProtectionFilter extends OncePerRequestFilter {
     private final CsrfTokenRepository csrfTokenRepository;
     private final ProblemDetailAccessDeniedHandler accessDeniedHandler;

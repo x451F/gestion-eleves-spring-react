@@ -3,12 +3,10 @@ package fr.afpa.gestioneleves.security;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
@@ -25,6 +23,9 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.AndRequestMatcher;
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.config.Customizer;
 
 import javax.crypto.SecretKey;
@@ -33,28 +34,12 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class SecurityConfiguration {
     private static final Duration CLOCK_SKEW = Duration.ofSeconds(30);
-
-    @Bean
-    Clock clock() {
-        return Clock.systemUTC();
-    }
-
-    @Bean
-    PasswordEncoder passwordEncoder() {
-        Map<String, PasswordEncoder> encoders = new LinkedHashMap<>();
-        encoders.put("bcrypt", new BCryptPasswordEncoder(12));
-        DelegatingPasswordEncoder encoder = new DelegatingPasswordEncoder("bcrypt", encoders);
-        // Phase 1 may contain valid pre-Delegating BCrypt hashes; plaintext is never a fallback.
-        encoder.setDefaultPasswordEncoderForMatches(new BCryptPasswordEncoder(12));
-        return encoder;
-    }
 
     @Bean
     SecretKey jwtSecretKey(JwtProperties properties) {
@@ -108,15 +93,21 @@ public class SecurityConfiguration {
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                         .requireCsrfProtectionMatcher(new AndRequestMatcher(
                                 CsrfFilter.DEFAULT_CSRF_MATCHER,
-                                request -> request.getRequestURI().startsWith(request.getContextPath() + "/api/auth/"))))
+                                request -> request.getRequestURI().startsWith(request.getContextPath() + "/api/auth/"),
+                                new NegatedRequestMatcher(new OrRequestMatcher(
+                                        new AntPathRequestMatcher("/api/auth/activate"),
+                                        new AntPathRequestMatcher("/api/auth/forgot-password"),
+                                        new AntPathRequestMatcher("/api/auth/reset-password"))))))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .addFilterAfter(bearerCsrfProtectionFilter, CsrfFilter.class)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/login", "/api/auth/csrf", "/api/auth/refresh", "/api/auth/logout").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/csrf", "/api/auth/refresh", "/api/auth/logout",
+                                "/api/auth/activate", "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
                         .requestMatchers("/api/auth/me", "/api/auth/logout-all").authenticated()
+                        .requestMatchers("/api/admin/accounts/**").hasRole("ADMIN")
                         .anyRequest().permitAll())
                 .oauth2ResourceServer(resourceServer -> resourceServer
                         .authenticationEntryPoint(authenticationEntryPoint)

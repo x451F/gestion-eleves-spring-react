@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.csrf.CsrfException;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -25,11 +26,12 @@ public class ProblemDetailAccessDeniedHandler implements AccessDeniedHandler {
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response,
                        AccessDeniedException accessDeniedException) throws IOException, ServletException {
+        boolean csrf = accessDeniedException instanceof CsrfException;
         ProblemDetail detail = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
-        detail.setType(URI.create("urn:problem:csrf_invalid"));
-        detail.setTitle("Jeton CSRF invalide");
-        detail.setDetail("La protection CSRF est invalide ou manquante.");
-        detail.setProperty("code", "csrf_invalid");
+        detail.setType(URI.create(csrf ? "urn:problem:csrf_invalid" : "urn:problem:access_denied"));
+        detail.setTitle(csrf ? "Jeton CSRF invalide" : "Accès refusé");
+        detail.setDetail(csrf ? "La protection CSRF est invalide ou manquante." : "Vous n’êtes pas autorisé à effectuer cette action.");
+        detail.setProperty("code", csrf ? "csrf_invalid" : "access_denied");
         response.setStatus(HttpStatus.FORBIDDEN.value());
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
         objectMapper.writeValue(response.getOutputStream(), detail);

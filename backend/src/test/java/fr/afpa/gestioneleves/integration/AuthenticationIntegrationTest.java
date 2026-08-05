@@ -167,7 +167,11 @@ class AuthenticationIntegrationTest {
         Utilisateur user = createUser("alice@example.fr", Role.ADMIN, StatutUtilisateur.ACTIF, 0, PASSWORD);
         String valid = signedToken(user.getId(), "ADMIN", 0, "gestion-eleves-api-test", Instant.now().minusSeconds(5), Instant.now().plusSeconds(900), true);
         assertAccepted(valid);
-        assertRejected(valid.substring(0, valid.length() - 1) + (valid.endsWith("A") ? "B" : "A"));
+        int signatureStart = valid.lastIndexOf('.') + 1;
+        String tamperedSignature = valid.substring(0, signatureStart)
+                + (valid.charAt(signatureStart) == 'A' ? "B" : "A")
+                + valid.substring(signatureStart + 1);
+        assertRejected(tamperedSignature);
         assertRejected(signedToken(user.getId(), "ADMIN", 0, "other-issuer", Instant.now().minusSeconds(5), Instant.now().plusSeconds(900), true));
         assertRejected("eyJhbGciOiJub25lIn0.eyJzdWIiOiIxIn0.");
         assertRejected(signedToken(user.getId(), "ADMIN", 0, "gestion-eleves-api-test", Instant.now().minusSeconds(901), Instant.now().minusSeconds(1), true));
