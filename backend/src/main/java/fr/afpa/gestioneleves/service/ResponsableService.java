@@ -11,6 +11,7 @@ import fr.afpa.gestioneleves.exception.ResourceNotFoundException;
 import fr.afpa.gestioneleves.mapper.DomainMapper;
 import fr.afpa.gestioneleves.repository.EleveResponsableRepository;
 import fr.afpa.gestioneleves.repository.ResponsableRepository;
+import fr.afpa.gestioneleves.security.AuthenticatedUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,6 +63,10 @@ public class ResponsableService {
     @Transactional(readOnly = true)
     public List<EleveResponsableResponse> eleves(Long responsableId) {
         trouver(responsableId); return lienRepository.findByResponsableId(responsableId).stream().map(mapper::toResponse).toList();
+    }
+    @Transactional(readOnly = true)
+    public List<EleveResponsableResponse> elevesActifs(AuthenticatedUser actor) {
+        return lienRepository.findActiveByResponsableUtilisateurId(actor.id()).stream().map(mapper::toResponse).toList();
     }
     @Transactional(readOnly = true)
     public List<EleveResponsableResponse> responsables(Long eleveId) {

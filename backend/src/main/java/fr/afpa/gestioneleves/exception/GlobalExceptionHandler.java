@@ -15,6 +15,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.Instant;
 import java.net.URI;
@@ -46,6 +47,16 @@ public class GlobalExceptionHandler {
         detail.setDetail("Ce lien est invalide ou expiré.");
         detail.setProperty("code", "invalid_account_token");
         return ResponseEntity.badRequest().body(detail);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<ProblemDetail> accessDenied(AccessDeniedException ex) {
+        ProblemDetail detail = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+        detail.setType(URI.create("urn:problem:access_denied"));
+        detail.setTitle("Accès interdit");
+        detail.setDetail("Vous n’êtes pas autorisé à effectuer cette opération.");
+        detail.setProperty("code", "access_denied");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(detail);
     }
 
     private ResponseEntity<ProblemDetail> authenticationFailureResponse(boolean clearRefreshCookie) {

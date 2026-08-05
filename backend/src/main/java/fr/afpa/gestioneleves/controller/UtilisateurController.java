@@ -3,11 +3,13 @@ package fr.afpa.gestioneleves.controller;
 import fr.afpa.gestioneleves.dto.response.UtilisateurResponse;
 import fr.afpa.gestioneleves.service.UtilisateurService;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/utilisateurs")
+@PreAuthorize("hasRole('ADMIN')")
 public class UtilisateurController {
     private final UtilisateurService service;
     public UtilisateurController(UtilisateurService service) { this.service = service; }

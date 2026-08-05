@@ -6,9 +6,12 @@ import fr.afpa.gestioneleves.dto.response.EnseignementResponse;
 import fr.afpa.gestioneleves.dto.response.InscriptionResponse;
 import fr.afpa.gestioneleves.service.ClasseService;
 import fr.afpa.gestioneleves.service.EnseignementService;
+import fr.afpa.gestioneleves.service.AccessPolicyService;
+import fr.afpa.gestioneleves.security.AuthenticatedUser;
 import fr.afpa.gestioneleves.service.InscriptionService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -20,16 +23,18 @@ public class ClasseController {
     private final ClasseService service;
     private final InscriptionService inscriptionService;
     private final EnseignementService enseignementService;
-    public ClasseController(ClasseService service, InscriptionService inscriptionService, EnseignementService enseignementService) {
-        this.service = service; this.inscriptionService = inscriptionService; this.enseignementService = enseignementService;
+    private final AccessPolicyService access;
+    public ClasseController(ClasseService service, InscriptionService inscriptionService, EnseignementService enseignementService, AccessPolicyService access) {
+        this.service = service; this.inscriptionService = inscriptionService; this.enseignementService = enseignementService; this.access = access;
     }
-    @PostMapping public ResponseEntity<ClasseResponse> creer(@Valid @RequestBody ClasseRequest r) {
+    @PostMapping public ResponseEntity<ClasseResponse> creer(@AuthenticationPrincipal AuthenticatedUser actor, @Valid @RequestBody ClasseRequest r) {
+        access.admin(actor);
         var result = service.creer(r); return ResponseEntity.created(URI.create("/api/classes/" + result.id())).body(result);
     }
-    @GetMapping public List<ClasseResponse> lister() { return service.lister(); }
-    @GetMapping("/{id}") public ClasseResponse obtenir(@PathVariable Long id) { return service.obtenir(id); }
-    @PutMapping("/{id}") public ClasseResponse modifier(@PathVariable Long id, @Valid @RequestBody ClasseRequest r) { return service.modifier(id, r); }
-    @DeleteMapping("/{id}") public ResponseEntity<Void> supprimer(@PathVariable Long id) { service.supprimer(id); return ResponseEntity.noContent().build(); }
-    @GetMapping("/{id}/inscriptions") public List<InscriptionResponse> inscriptions(@PathVariable Long id) { return inscriptionService.parClasse(id); }
-    @GetMapping("/{id}/enseignements") public List<EnseignementResponse> enseignements(@PathVariable Long id) { return enseignementService.parClasse(id); }
+    @GetMapping public List<ClasseResponse> lister(@AuthenticationPrincipal AuthenticatedUser actor) { access.admin(actor); return service.lister(); }
+    @GetMapping("/{id}") public ClasseResponse obtenir(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) { access.classe(actor, id); return service.obtenir(id); }
+    @PutMapping("/{id}") public ClasseResponse modifier(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id, @Valid @RequestBody ClasseRequest r) { access.admin(actor); return service.modifier(id, r); }
+    @DeleteMapping("/{id}") public ResponseEntity<Void> supprimer(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) { access.admin(actor); service.supprimer(id); return ResponseEntity.noContent().build(); }
+    @GetMapping("/{id}/inscriptions") public List<InscriptionResponse> inscriptions(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) { access.classe(actor, id); return inscriptionService.parClasse(id); }
+    @GetMapping("/{id}/enseignements") public List<EnseignementResponse> enseignements(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) { access.classe(actor, id); return enseignementService.parClasse(id); }
 }

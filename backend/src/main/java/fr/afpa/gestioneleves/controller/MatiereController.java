@@ -6,12 +6,14 @@ import fr.afpa.gestioneleves.service.MatiereService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.net.URI;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/matieres")
+@PreAuthorize("hasRole('ADMIN')")
 public class MatiereController {
     private final MatiereService service;
     public MatiereController(MatiereService service) { this.service = service; }

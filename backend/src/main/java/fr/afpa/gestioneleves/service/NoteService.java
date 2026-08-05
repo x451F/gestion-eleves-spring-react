@@ -9,6 +9,7 @@ import fr.afpa.gestioneleves.exception.BusinessRuleException;
 import fr.afpa.gestioneleves.exception.ResourceNotFoundException;
 import fr.afpa.gestioneleves.mapper.DomainMapper;
 import fr.afpa.gestioneleves.repository.NoteRepository;
+import fr.afpa.gestioneleves.security.AuthenticatedUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,13 +50,27 @@ public class NoteService {
         inscriptionService.trouver(id); return repository.findByInscriptionIdOrderByDateEvaluation(id).stream().map(mapper::toResponse).toList();
     }
     @Transactional(readOnly = true)
+    public List<NoteResponse> parInscriptionPourEnseignant(Long id, AuthenticatedUser actor) {
+        return repository.findByInscriptionIdAndEnseignementEnseignantUtilisateurIdOrderByDateEvaluation(id, actor.id()).stream().map(mapper::toResponse).toList();
+    }
+    @Transactional(readOnly = true)
     public List<NoteResponse> parEleve(Long id) {
         return repository.findByInscriptionEleveIdOrderByDateEvaluation(id).stream().map(mapper::toResponse).toList();
+    }
+    @Transactional(readOnly = true)
+    public List<NoteResponse> parElevePourEnseignant(Long id, AuthenticatedUser actor) {
+        return repository.findByInscriptionEleveIdAndEnseignementEnseignantUtilisateurIdOrderByDateEvaluation(id, actor.id()).stream().map(mapper::toResponse).toList();
     }
     @Transactional(readOnly = true)
     public MoyennesResponse moyennes(Long inscriptionId, PeriodeBulletin periode) {
         inscriptionService.trouver(inscriptionId);
         return calculMoyenneService.calculer(inscriptionId, periode, repository.findByInscriptionIdAndPeriode(inscriptionId, periode));
+    }
+    @Transactional(readOnly = true)
+    public MoyennesResponse moyennesPourEnseignant(Long inscriptionId, PeriodeBulletin periode, AuthenticatedUser actor) {
+        inscriptionService.trouver(inscriptionId);
+        return calculMoyenneService.calculer(inscriptionId, periode,
+                repository.findByInscriptionIdAndPeriodeAndEnseignementEnseignantUtilisateurId(inscriptionId, periode, actor.id()));
     }
     public NoteResponse modifier(Long id, NoteRequest r) {
         verifierValeurs(r);

@@ -12,4 +12,6 @@ public interface EnseignementRepository extends JpaRepository<Enseignement, Long
             Long enseignantId, Long matiereId, Long classeId, String anneeScolaire, Long id);
     List<Enseignement> findByClasseIdOrderByMatiereNom(Long classeId);
     List<Enseignement> findByEnseignantIdOrderByAnneeScolaireDesc(Long enseignantId);
+    boolean existsByIdAndEnseignantUtilisateurId(Long id, Long utilisateurId);
+    boolean existsByClasseIdAndEnseignantUtilisateurId(Long classeId, Long utilisateurId);
 }

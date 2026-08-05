@@ -5,6 +5,9 @@ import fr.afpa.gestioneleves.dto.request.ProvisionTeacherAccountRequest;
 import fr.afpa.gestioneleves.dto.response.ProvisionedAccountResponse;
 import fr.afpa.gestioneleves.service.AccountMailService;
 import fr.afpa.gestioneleves.service.AccountProvisioningService;
+import fr.afpa.gestioneleves.service.AccountAdministrationService;
+import fr.afpa.gestioneleves.security.AuthenticatedUser;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,10 +24,12 @@ import java.net.URI;
 public class AdminAccountController {
     private final AccountProvisioningService provisioningService;
     private final AccountMailService mailService;
+    private final AccountAdministrationService administrationService;
 
-    public AdminAccountController(AccountProvisioningService provisioningService, AccountMailService mailService) {
-        this.provisioningService = provisioningService;
-        this.mailService = mailService;
+    public AdminAccountController(AccountProvisioningService provisioningService, AccountMailService mailService,
+                                  AccountAdministrationService administrationService) {
+        this.provisioningService = provisioningService; this.mailService = mailService;
+        this.administrationService = administrationService;
     }
 
     @PostMapping("/teachers")
@@ -48,6 +53,12 @@ public class AdminAccountController {
         AccountProvisioningService.ProvisionedAccount account = provisioningService.resendActivation(id);
         boolean delivered = mailService.sendActivation(account.user(), account.rawActivationToken());
         return ResponseEntity.status(HttpStatus.OK).body(response(account, delivered));
+    }
+
+    @PostMapping("/{id}/deactivate")
+    public ResponseEntity<Void> deactivate(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) {
+        administrationService.deactivate(actor, id);
+        return ResponseEntity.noContent().build();
     }
 
     private ProvisionedAccountResponse response(AccountProvisioningService.ProvisionedAccount account, boolean delivered) {

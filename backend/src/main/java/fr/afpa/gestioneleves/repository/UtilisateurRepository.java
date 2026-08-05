@@ -8,6 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.util.List;
+import fr.afpa.gestioneleves.enumtype.Role;
+import fr.afpa.gestioneleves.enumtype.StatutUtilisateur;
 
 public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> {
     Optional<Utilisateur> findByEmailNormalise(String emailNormalise);
@@ -19,4 +22,8 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select utilisateur from Utilisateur utilisateur where utilisateur.id = :id")
     Optional<Utilisateur> findByIdForUpdate(@Param("id") Long id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select utilisateur from Utilisateur utilisateur where utilisateur.role = :role and utilisateur.statut = :statut")
+    List<Utilisateur> findByRoleAndStatutForUpdate(@Param("role") Role role, @Param("statut") StatutUtilisateur statut);
 }

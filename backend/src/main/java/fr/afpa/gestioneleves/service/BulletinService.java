@@ -11,6 +11,7 @@ import fr.afpa.gestioneleves.exception.ResourceNotFoundException;
 import fr.afpa.gestioneleves.mapper.DomainMapper;
 import fr.afpa.gestioneleves.repository.BulletinRepository;
 import fr.afpa.gestioneleves.repository.NoteRepository;
+import fr.afpa.gestioneleves.security.AuthenticatedUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,6 +63,10 @@ public class BulletinService {
     public List<BulletinResponse> parInscription(Long id) {
         inscriptionService.trouver(id);
         return repository.findByInscriptionIdOrderByDateGenerationDesc(id).stream().map(mapper::toResponse).toList();
+    }
+    @Transactional(readOnly = true)
+    public List<BulletinResponse> parInscriptionPourEnseignant(Long id, AuthenticatedUser actor) {
+        return repository.findVisibleToTeacherByInscriptionId(id, actor.id()).stream().map(mapper::toResponse).toList();
     }
     public BulletinResponse publier(Long id) {
         Bulletin bulletin = trouver(id); bulletin.setStatut(StatutBulletin.PUBLIE);

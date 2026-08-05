@@ -9,6 +9,7 @@ import fr.afpa.gestioneleves.exception.DuplicateResourceException;
 import fr.afpa.gestioneleves.exception.ResourceNotFoundException;
 import fr.afpa.gestioneleves.mapper.DomainMapper;
 import fr.afpa.gestioneleves.repository.InscriptionRepository;
+import fr.afpa.gestioneleves.security.AuthenticatedUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +44,10 @@ public class InscriptionService {
     @Transactional(readOnly = true)
     public List<InscriptionResponse> parEleve(Long id) {
         eleveService.trouver(id); return repository.findByEleveIdOrderByAnneeScolaireDesc(id).stream().map(mapper::toResponse).toList();
+    }
+    @Transactional(readOnly = true)
+    public List<InscriptionResponse> parElevePourEnseignant(Long id, AuthenticatedUser actor) {
+        return repository.findVisibleToTeacherByEleveId(id, actor.id()).stream().map(mapper::toResponse).toList();
     }
     @Transactional(readOnly = true)
     public List<InscriptionResponse> parClasse(Long id) {

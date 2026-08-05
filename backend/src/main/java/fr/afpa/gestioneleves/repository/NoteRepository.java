@@ -10,4 +10,8 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
     List<Note> findByInscriptionIdOrderByDateEvaluation(Long inscriptionId);
     List<Note> findByInscriptionEleveIdOrderByDateEvaluation(Long eleveId);
     List<Note> findByInscriptionIdAndPeriode(Long inscriptionId, PeriodeBulletin periode);
+    List<Note> findByInscriptionIdAndPeriodeAndEnseignementEnseignantUtilisateurId(Long inscriptionId, PeriodeBulletin periode, Long utilisateurId);
+    boolean existsByIdAndEnseignementEnseignantUtilisateurId(Long id, Long utilisateurId);
+    List<Note> findByInscriptionEleveIdAndEnseignementEnseignantUtilisateurIdOrderByDateEvaluation(Long eleveId, Long utilisateurId);
+    List<Note> findByInscriptionIdAndEnseignementEnseignantUtilisateurIdOrderByDateEvaluation(Long inscriptionId, Long utilisateurId);
 }
