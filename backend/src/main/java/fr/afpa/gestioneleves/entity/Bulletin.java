@@ -10,9 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "bulletin",
-        uniqueConstraints = @UniqueConstraint(name = "uk_bulletin_inscription_periode",
-                columnNames = {"inscription_id", "periode"}))
+@Table(name = "bulletin")
 public class Bulletin extends BaseAuditEntity {
 
     @Id
@@ -39,6 +37,10 @@ public class Bulletin extends BaseAuditEntity {
 
     @Column(length = 1000)
     private String appreciation;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "version_precedente_id")
+    private Bulletin versionPrecedente;
 
     @OneToMany(mappedBy = "bulletin", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("nomMatiere ASC")
@@ -67,4 +69,6 @@ public class Bulletin extends BaseAuditEntity {
     public void setAppreciation(String appreciation) { this.appreciation = appreciation; }
     public List<BulletinLigne> getLignes() { return lignes; }
     public long getVersion() { return version; }
+    public Bulletin getVersionPrecedente() { return versionPrecedente; }
+    public void setVersionPrecedente(Bulletin versionPrecedente) { this.versionPrecedente = versionPrecedente; }
 }

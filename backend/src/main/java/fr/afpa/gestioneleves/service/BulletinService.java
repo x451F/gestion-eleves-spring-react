@@ -34,8 +34,14 @@ public class BulletinService {
         this.inscriptionService = inscriptionService; this.calculMoyenneService = calculMoyenneService; this.mapper = mapper;
     }
     public BulletinResponse generer(BulletinGenerateRequest r) {
-        if (repository.existsByInscriptionIdAndPeriode(r.inscriptionId(), r.periode()))
-            throw new DuplicateResourceException("Un bulletin existe déjà pour cette inscription et cette période");
+        if (repository.existsByInscriptionIdAndPeriode(r.inscriptionId(), r.periode())) {
+            var brouillon = repository.findByInscriptionIdAndPeriodeAndStatut(r.inscriptionId(), r.periode(), StatutBulletin.BROUILLON);
+            if (brouillon.isEmpty()) throw new DuplicateResourceException("Un bulletin existe déjà pour cette inscription et cette période");
+            repository.delete(brouillon.get()); repository.flush();
+        }
+        return genererSnapshot(r);
+    }
+    private BulletinResponse genererSnapshot(BulletinGenerateRequest r) {
         var inscription = inscriptionService.trouver(r.inscriptionId());
         var notes = noteRepository.findByInscriptionIdAndPeriode(r.inscriptionId(), r.periode());
         var moyennes = calculMoyenneService.calculer(r.inscriptionId(), r.periode(), notes);
@@ -69,12 +75,22 @@ public class BulletinService {
         return repository.findVisibleToTeacherByInscriptionId(id, actor.id()).stream().map(mapper::toResponse).toList();
     }
     public BulletinResponse publier(Long id) {
-        Bulletin bulletin = trouver(id); bulletin.setStatut(StatutBulletin.PUBLIE);
+        Bulletin bulletin = trouver(id);
+        if (bulletin.getStatut() != StatutBulletin.BROUILLON) throw new BusinessRuleException("Seul un bulletin brouillon peut être publié");
+        bulletin.setStatut(StatutBulletin.PUBLIE);
         return mapper.toResponse(repository.save(bulletin));
+    }
+    public BulletinResponse corriger(Long id, BulletinGenerateRequest request) {
+        Bulletin precedent = trouver(id);
+        if (precedent.getStatut() != StatutBulletin.PUBLIE) throw new BusinessRuleException("Seul un bulletin publié peut être corrigé");
+        precedent.setStatut(StatutBulletin.REMPLACE); repository.saveAndFlush(precedent);
+        BulletinResponse draft = genererSnapshot(request);
+        Bulletin nouveau = trouver(draft.id()); nouveau.setVersionPrecedente(precedent);
+        return mapper.toResponse(repository.save(nouveau));
     }
     public void supprimer(Long id) {
         Bulletin bulletin = trouver(id);
-        if (bulletin.getStatut() == StatutBulletin.PUBLIE)
+        if (bulletin.getStatut() != StatutBulletin.BROUILLON)
             throw new BusinessRuleException("Un bulletin publié ne peut pas être supprimé");
         repository.delete(bulletin);
     }

@@ -34,6 +34,7 @@ public class BulletinController {
     @GetMapping public List<BulletinResponse> lister(@AuthenticationPrincipal AuthenticatedUser actor) { access.admin(actor); return service.lister(); }
     @GetMapping("/{id}") public BulletinResponse obtenir(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) { access.bulletin(actor, id); return service.obtenir(id); }
     @PostMapping("/{id}/publier") public BulletinResponse publier(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) { access.admin(actor); return service.publier(id); }
+    @PostMapping("/{id}/corriger") public BulletinResponse corriger(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id, @Valid @RequestBody BulletinGenerateRequest r) { access.admin(actor); return service.corriger(id, r); }
     @DeleteMapping("/{id}") public ResponseEntity<Void> supprimer(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) { access.admin(actor); service.supprimer(id); return ResponseEntity.noContent().build(); }
     @GetMapping(value = "/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> pdf(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) {
