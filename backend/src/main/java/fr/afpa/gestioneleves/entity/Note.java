@@ -44,6 +44,9 @@ public class Note extends BaseAuditEntity {
     @Column(length = 500)
     private String commentaire;
 
+    @Version
+    private long version;
+
     public Long getId() { return id; }
     public Inscription getInscription() { return inscription; }
     public void setInscription(Inscription inscription) { this.inscription = inscription; }
@@ -63,4 +66,5 @@ public class Note extends BaseAuditEntity {
     public void setLibelle(String libelle) { this.libelle = libelle; }
     public String getCommentaire() { return commentaire; }
     public void setCommentaire(String commentaire) { this.commentaire = commentaire; }
+    public long getVersion() { return version; }
 }

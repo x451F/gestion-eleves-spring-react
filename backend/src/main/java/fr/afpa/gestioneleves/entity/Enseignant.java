@@ -19,8 +19,12 @@ public class Enseignant extends BaseAuditEntity {
     @Column(nullable = false, length = 100)
     private String prenom;
 
+    @Deprecated(forRemoval = false)
     @Column(nullable = false, unique = true, length = 180)
     private String email;
+
+    @Column(name = "legacy_email", length = 180)
+    private String legacyEmail;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "utilisateur_id", unique = true)
@@ -38,6 +42,8 @@ public class Enseignant extends BaseAuditEntity {
     public void setPrenom(String prenom) { this.prenom = prenom; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+    public String getLegacyEmail() { return legacyEmail; }
+    public void setLegacyEmail(String legacyEmail) { this.legacyEmail = legacyEmail; }
     public Utilisateur getUtilisateur() { return utilisateur; }
     public void setUtilisateur(Utilisateur utilisateur) { this.utilisateur = utilisateur; }
     public boolean isActif() { return actif; }

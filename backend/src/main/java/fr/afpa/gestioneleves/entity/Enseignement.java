@@ -32,6 +32,9 @@ public class Enseignement extends BaseAuditEntity {
     @Column(name = "coefficient_matiere", nullable = false, precision = 8, scale = 2)
     private BigDecimal coefficientMatiere;
 
+    @Version
+    private long version;
+
     public Long getId() { return id; }
     public Enseignant getEnseignant() { return enseignant; }
     public void setEnseignant(Enseignant enseignant) { this.enseignant = enseignant; }
@@ -43,4 +46,5 @@ public class Enseignement extends BaseAuditEntity {
     public void setAnneeScolaire(String anneeScolaire) { this.anneeScolaire = anneeScolaire; }
     public BigDecimal getCoefficientMatiere() { return coefficientMatiere; }
     public void setCoefficientMatiere(BigDecimal coefficientMatiere) { this.coefficientMatiere = coefficientMatiere; }
+    public long getVersion() { return version; }
 }

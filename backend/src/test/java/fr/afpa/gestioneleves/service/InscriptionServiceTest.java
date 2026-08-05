@@ -32,7 +32,7 @@ class InscriptionServiceTest {
 
     @BeforeEach void setUp() {
         service = new InscriptionService(repository, eleveService, classeService, new DomainMapper());
-        request = new InscriptionRequest(1L, 2L, "2026-2027", LocalDate.of(2026, 9, 1), null, StatutInscription.ACTIVE);
+        request = new InscriptionRequest(1L, 2L, "2026-2027", LocalDate.of(2026, 9, 1), null, StatutInscription.EN_COURS);
         classe = new Classe(); classe.setNom("6e A"); classe.setAnneeScolaire("2026-2027");
     }
     @Test void creerSucces() {
@@ -51,7 +51,7 @@ class InscriptionServiceTest {
     }
     @Test void inscriptionActiveDupliquee() {
         when(eleveService.trouver(1L)).thenReturn(new Eleve()); when(classeService.trouver(2L)).thenReturn(classe);
-        when(repository.existsByEleveIdAndAnneeScolaireAndStatut(1L, "2026-2027", StatutInscription.ACTIVE)).thenReturn(true);
+        when(repository.existsByEleveIdAndAnneeScolaireAndStatut(1L, "2026-2027", StatutInscription.EN_COURS)).thenReturn(true);
         assertThatThrownBy(() -> service.creer(request)).isInstanceOf(DuplicateResourceException.class);
     }
     @Test void anneeIncompatible() {

@@ -14,6 +14,7 @@ import fr.afpa.gestioneleves.repository.ResponsableRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -50,6 +51,7 @@ public class ResponsableService {
         lien.setResponsable(trouver(responsableId)); lien.setEleve(eleveService.trouver(eleveId));
         lien.setLienParente(r.lienParente()); lien.setResponsablePrincipal(r.responsablePrincipal());
         lien.setAutoriteParentale(r.autoriteParentale()); lien.setContactUrgence(r.contactUrgence());
+        lien.setValidFrom(LocalDate.now());
         return mapper.toResponse(lienRepository.save(lien));
     }
     public void dissocier(Long responsableId, Long eleveId) {

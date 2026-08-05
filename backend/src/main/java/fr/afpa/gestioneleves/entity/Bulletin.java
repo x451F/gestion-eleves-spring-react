@@ -44,6 +44,9 @@ public class Bulletin extends BaseAuditEntity {
     @OrderBy("nomMatiere ASC")
     private List<BulletinLigne> lignes = new ArrayList<>();
 
+    @Version
+    private long version;
+
     public void ajouterLigne(BulletinLigne ligne) {
         ligne.setBulletin(this);
         lignes.add(ligne);
@@ -63,4 +66,5 @@ public class Bulletin extends BaseAuditEntity {
     public String getAppreciation() { return appreciation; }
     public void setAppreciation(String appreciation) { this.appreciation = appreciation; }
     public List<BulletinLigne> getLignes() { return lignes; }
+    public long getVersion() { return version; }
 }

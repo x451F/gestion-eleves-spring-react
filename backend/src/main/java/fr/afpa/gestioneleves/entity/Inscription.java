@@ -34,6 +34,9 @@ public class Inscription extends BaseAuditEntity {
     @Column(nullable = false, length = 20)
     private StatutInscription statut;
 
+    @Version
+    private long version;
+
     public Long getId() { return id; }
     public Eleve getEleve() { return eleve; }
     public void setEleve(Eleve eleve) { this.eleve = eleve; }
@@ -47,4 +50,5 @@ public class Inscription extends BaseAuditEntity {
     public void setDateFin(LocalDate dateFin) { this.dateFin = dateFin; }
     public StatutInscription getStatut() { return statut; }
     public void setStatut(StatutInscription statut) { this.statut = statut; }
+    public long getVersion() { return version; }
 }

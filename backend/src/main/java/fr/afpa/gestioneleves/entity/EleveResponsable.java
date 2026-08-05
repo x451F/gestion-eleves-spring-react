@@ -3,6 +3,8 @@ package fr.afpa.gestioneleves.entity;
 import fr.afpa.gestioneleves.enumtype.LienParente;
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "eleve_responsable",
         uniqueConstraints = @UniqueConstraint(name = "uk_eleve_responsable", columnNames = {"eleve_id", "responsable_id"}))
@@ -33,6 +35,12 @@ public class EleveResponsable extends BaseAuditEntity {
     @Column(name = "contact_urgence", nullable = false)
     private boolean contactUrgence;
 
+    @Column(name = "valid_from", nullable = false)
+    private LocalDate validFrom;
+
+    @Column(name = "valid_to")
+    private LocalDate validTo;
+
     public Long getId() { return id; }
     public Eleve getEleve() { return eleve; }
     public void setEleve(Eleve eleve) { this.eleve = eleve; }
@@ -46,4 +54,8 @@ public class EleveResponsable extends BaseAuditEntity {
     public void setAutoriteParentale(boolean autoriteParentale) { this.autoriteParentale = autoriteParentale; }
     public boolean isContactUrgence() { return contactUrgence; }
     public void setContactUrgence(boolean contactUrgence) { this.contactUrgence = contactUrgence; }
+    public LocalDate getValidFrom() { return validFrom; }
+    public void setValidFrom(LocalDate validFrom) { this.validFrom = validFrom; }
+    public LocalDate getValidTo() { return validTo; }
+    public void setValidTo(LocalDate validTo) { this.validTo = validTo; }
 }

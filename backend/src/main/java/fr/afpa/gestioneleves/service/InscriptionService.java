@@ -67,13 +67,13 @@ public class InscriptionService {
         if (r.dateFin() != null && r.dateFin().isBefore(r.dateInscription())) {
             throw new BusinessRuleException("La date de fin ne peut pas précéder la date d'inscription");
         }
-        if (r.statut() == StatutInscription.ACTIVE) {
+        if (r.statut() == StatutInscription.EN_COURS) {
             boolean duplicate = id == null
-                    ? repository.existsByEleveIdAndAnneeScolaireAndStatut(r.eleveId(), r.anneeScolaire(), StatutInscription.ACTIVE)
-                    : repository.existsByEleveIdAndAnneeScolaireAndStatutAndIdNot(r.eleveId(), r.anneeScolaire(), StatutInscription.ACTIVE, id);
+                    ? repository.existsByEleveIdAndAnneeScolaireAndStatut(r.eleveId(), r.anneeScolaire(), StatutInscription.EN_COURS)
+                    : repository.existsByEleveIdAndAnneeScolaireAndStatutAndIdNot(r.eleveId(), r.anneeScolaire(), StatutInscription.EN_COURS, id);
             if (duplicate) throw new DuplicateResourceException("Une inscription active existe déjà pour cet élève et cette année");
         }
-        if (r.statut() == StatutInscription.ACTIVE && r.dateFin() != null) {
+        if (r.statut() == StatutInscription.EN_COURS && r.dateFin() != null) {
             throw new BusinessRuleException("Une inscription active ne doit pas avoir de date de fin");
         }
     }
