@@ -54,10 +54,11 @@ export function Dashboard() {
   return (
     <section>
       <h1>Administration</h1>
-      <p>Gérez les élèves, leurs classes, leurs inscriptions, leurs responsables et leurs photos.</p>
+      <p>Gérez les élèves, les classes, les matières, les enseignants, les comptes et les bulletins.</p>
       <div className="action-row">
         <Link className="button" to="/admin/eleves">Gérer les élèves</Link>
         <Link className="secondary-link" to="/admin/classes">Gérer les classes</Link>
+        <Link className="secondary-link" to="/admin/matieres">Gérer les matières</Link>
       </div>
     </section>
   );

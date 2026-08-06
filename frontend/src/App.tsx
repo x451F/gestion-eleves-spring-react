@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import AdminLayout from './admin/AdminLayout';
 import { ClassDetails, ClassForm, ClassList, Dashboard, StudentDetails, StudentForm, StudentList } from './admin/AdminPages';
+import { AccountList, BulletinList, SubjectForm, SubjectList, TeacherDetails, TeacherForm, TeacherList, TeachingForm, TeachingList } from './admin/AcademicPages';
 import { useAuth } from './auth/AuthContext';
 import { Role } from './auth/models';
 
@@ -71,6 +72,18 @@ export default function App() {
       <Route path="classes/nouvelle" element={<ClassForm />} />
       <Route path="classes/:id" element={<ClassDetails />} />
       <Route path="classes/:id/modifier" element={<ClassForm />} />
+      <Route path="matieres" element={<SubjectList />} />
+      <Route path="matieres/nouvelle" element={<SubjectForm />} />
+      <Route path="matieres/:id/modifier" element={<SubjectForm />} />
+      <Route path="enseignants" element={<TeacherList />} />
+      <Route path="enseignants/nouveau" element={<TeacherForm />} />
+      <Route path="enseignants/:id" element={<TeacherDetails />} />
+      <Route path="enseignants/:id/modifier" element={<TeacherForm />} />
+      <Route path="enseignements" element={<TeachingList />} />
+      <Route path="enseignements/nouveau" element={<TeachingForm />} />
+      <Route path="enseignements/:id/modifier" element={<TeachingForm />} />
+      <Route path="comptes" element={<AccountList />} />
+      <Route path="bulletins" element={<BulletinList />} />
     </Route>
     <Route path="/enseignant" element={<RoleHome role="ENSEIGNANT" />} />
     <Route path="/responsable" element={<RoleHome role="RESPONSABLE" />} />

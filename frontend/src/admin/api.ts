@@ -68,6 +68,89 @@ export type ApiErrorBody = {
   fieldErrors?: Array<{ field: string; message: string }>;
 };
 
+export type Subject = {
+  id: number;
+  code: string;
+  nom: string;
+  coefficientDefaut: number;
+  actif: boolean;
+};
+
+export type SubjectPayload = Omit<Subject, 'id'>;
+
+export type Teacher = {
+  id: number;
+  matricule: string;
+  nom: string;
+  prenom: string;
+  email: string;
+  utilisateurId: number | null;
+  actif: boolean;
+};
+
+export type TeacherPayload = Omit<Teacher, 'id' | 'utilisateurId'>;
+
+export type Teaching = {
+  id: number;
+  enseignantId: number;
+  enseignantNomComplet: string;
+  matiereId: number;
+  matiereNom: string;
+  classeId: number;
+  classeNom: string;
+  anneeScolaire: string;
+  coefficientMatiere: number;
+};
+
+export type TeachingPayload = Omit<Teaching, 'id' | 'enseignantNomComplet' | 'matiereNom' | 'classeNom'>;
+
+export type Account = {
+  id: number;
+  email: string;
+  role: 'ADMIN' | 'ENSEIGNANT' | 'RESPONSABLE';
+  actif: boolean;
+  createdAt: string;
+  lastLoginAt: string | null;
+};
+
+export type ProvisionedAccount = {
+  id: number;
+  email: string;
+  role: Account['role'];
+  status: 'EN_ATTENTE_ACTIVATION' | 'ACTIF' | 'DESACTIVE';
+  profileId: number | null;
+  mailDelivered: boolean;
+};
+
+export type BulletinStatus = 'BROUILLON' | 'PUBLIE' | 'REMPLACE';
+export type BulletinPeriod = 'TRIMESTRE_1' | 'TRIMESTRE_2' | 'TRIMESTRE_3';
+
+export type Bulletin = {
+  id: number;
+  inscriptionId: number;
+  eleveNomComplet: string;
+  classeNom: string;
+  anneeScolaire: string;
+  periode: BulletinPeriod;
+  dateGeneration: string;
+  statut: BulletinStatus;
+  moyenneGenerale: number | null;
+  appreciation: string | null;
+  lignes: Array<{
+    codeMatiere: string;
+    nomMatiere: string;
+    moyenne: number | null;
+    coefficient: number;
+    nombreNotes: number;
+  }>;
+};
+
+export type BulletinPayload = {
+  inscriptionId: number;
+  periode: BulletinPeriod;
+  appreciation: string | null;
+};
+
 export function frenchApiError(error: unknown, fallback: string) {
   const body = (error as AxiosError<ApiErrorBody>).response?.data;
   if (body?.fieldErrors?.length) {
@@ -100,6 +183,7 @@ export const classes = {
 };
 
 export const registrations = {
+  list: () => api.get<Registration[]>('/inscriptions').then((response) => response.data),
   create: (payload: {
     eleveId: number;
     classeId: number;
@@ -114,6 +198,62 @@ export const registrations = {
     api.post<Registration>(`/inscriptions/${id}/terminate`, { dateFin }).then((response) => response.data),
   cancel: (id: number, dateFin: string) =>
     api.post<Registration>(`/inscriptions/${id}/cancel`, { dateFin }).then((response) => response.data),
+};
+
+export const subjects = {
+  list: () => api.get<Subject[]>('/matieres').then((response) => response.data),
+  get: (id: number) => api.get<Subject>(`/matieres/${id}`).then((response) => response.data),
+  create: (payload: SubjectPayload) => api.post<Subject>('/matieres', payload).then((response) => response.data),
+  update: (id: number, payload: SubjectPayload) =>
+    api.put<Subject>(`/matieres/${id}`, payload).then((response) => response.data),
+};
+
+export const teachers = {
+  list: () => api.get<Teacher[]>('/enseignants').then((response) => response.data),
+  get: (id: number) => api.get<Teacher>(`/enseignants/${id}`).then((response) => response.data),
+  create: (payload: TeacherPayload) => api.post<Teacher>('/enseignants', payload).then((response) => response.data),
+  update: (id: number, payload: TeacherPayload) =>
+    api.put<Teacher>(`/enseignants/${id}`, payload).then((response) => response.data),
+  teachings: (id: number) => api.get<Teaching[]>(`/enseignants/${id}/enseignements`).then((response) => response.data),
+};
+
+export const teachings = {
+  list: () => api.get<Teaching[]>('/enseignements').then((response) => response.data),
+  get: (id: number) => api.get<Teaching>(`/enseignements/${id}`).then((response) => response.data),
+  create: (payload: TeachingPayload) => api.post<Teaching>('/enseignements', payload).then((response) => response.data),
+  update: (id: number, payload: TeachingPayload) =>
+    api.put<Teaching>(`/enseignements/${id}`, payload).then((response) => response.data),
+  remove: (id: number) => api.delete(`/enseignements/${id}`),
+};
+
+export const accounts = {
+  list: () => api.get<Account[]>('/utilisateurs').then((response) => response.data),
+  provisionTeacher: (payload: {
+    enseignantId: number | null;
+    email: string;
+    matricule: string | null;
+    nom: string | null;
+    prenom: string | null;
+  }) => api.post<ProvisionedAccount>('/admin/accounts/teachers', payload).then((response) => response.data),
+  provisionGuardian: (payload: {
+    responsableId: number | null;
+    email: string;
+    nom: string | null;
+    prenom: string | null;
+    telephone: string | null;
+  }) => api.post<ProvisionedAccount>('/admin/accounts/guardians', payload).then((response) => response.data),
+  resendActivation: (id: number) =>
+    api.post<ProvisionedAccount>(`/admin/accounts/${id}/resend-activation`).then((response) => response.data),
+  deactivate: (id: number) => api.post(`/admin/accounts/${id}/deactivate`),
+};
+
+export const bulletins = {
+  list: () => api.get<Bulletin[]>('/bulletins').then((response) => response.data),
+  generate: (payload: BulletinPayload) => api.post<Bulletin>('/bulletins/generate', payload).then((response) => response.data),
+  publish: (id: number) => api.post<Bulletin>(`/bulletins/${id}/publier`).then((response) => response.data),
+  correct: (id: number, payload: BulletinPayload) =>
+    api.post<Bulletin>(`/bulletins/${id}/corriger`, payload).then((response) => response.data),
+  pdf: (id: number) => api.get<Blob>(`/bulletins/${id}/pdf`, { responseType: 'blob' }).then((response) => response.data),
 };
 
 export const guardians = {

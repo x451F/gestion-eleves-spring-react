@@ -27,6 +27,11 @@ describe('routing and Phase 8 authentication UI', () => {
     expect(screen.getByRole('heading', { name: 'Tableau de bord ADMIN' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Élèves' })).toHaveAttribute('href', '/admin/eleves');
     expect(screen.getByRole('link', { name: 'Classes' })).toHaveAttribute('href', '/admin/classes');
+    expect(screen.getByRole('link', { name: 'Matières' })).toHaveAttribute('href', '/admin/matieres');
+    expect(screen.getByRole('link', { name: 'Enseignants' })).toHaveAttribute('href', '/admin/enseignants');
+    expect(screen.getByRole('link', { name: 'Affectations' })).toHaveAttribute('href', '/admin/enseignements');
+    expect(screen.getByRole('link', { name: 'Comptes' })).toHaveAttribute('href', '/admin/comptes');
+    expect(screen.getByRole('link', { name: 'Bulletins' })).toHaveAttribute('href', '/admin/bulletins');
   });
 
   it.each(['ENSEIGNANT', 'RESPONSABLE'] as const)('rejects %s from ADMIN routes', (role) => {

@@ -5,6 +5,11 @@ const navigation = [
   { to: '/admin', label: 'Tableau de bord', end: true },
   { to: '/admin/eleves', label: 'Élèves' },
   { to: '/admin/classes', label: 'Classes' },
+  { to: '/admin/matieres', label: 'Matières' },
+  { to: '/admin/enseignants', label: 'Enseignants' },
+  { to: '/admin/enseignements', label: 'Affectations' },
+  { to: '/admin/comptes', label: 'Comptes' },
+  { to: '/admin/bulletins', label: 'Bulletins' },
 ];
 
 export default function AdminLayout() {
