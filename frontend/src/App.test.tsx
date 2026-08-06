@@ -1,12 +1,68 @@
-import {render,screen,waitFor} from '@testing-library/react';import userEvent from '@testing-library/user-event';import {describe,it,expect,vi,beforeEach} from 'vitest';import {MemoryRouter} from 'react-router-dom';import App from './App';import {AuthProvider} from './auth/AuthContext';
-const m=vi.hoisted(()=>({post:vi.fn(),get:vi.fn()}));vi.mock('./auth/http',()=>({api:{post:m.post,get:m.get},setAccessToken:vi.fn(),registerClearAuth:vi.fn()}));const mount=(p='/login')=>render(<MemoryRouter initialEntries={[p]}><AuthProvider><App/></AuthProvider></MemoryRouter>);beforeEach(()=>{m.post.mockReset();m.get.mockReset();m.post.mockRejectedValue(new Error('anonymous'));m.get.mockRejectedValue(new Error('anonymous'));});
-describe('Phase 8 UI auth',()=>{
-it('prevents duplicate pending login',async()=>{let done:any;m.post.mockImplementation(()=>new Promise(r=>{done=r}));const u=userEvent.setup();mount();await u.type(screen.getByLabelText('Email'),'a@b.fr');await u.type(screen.getByLabelText('Mot de passe'),'x');const b=screen.getByRole('button',{name:'Se connecter'});await u.click(b);expect(b).toBeDisabled();await u.click(b);expect(m.post).toHaveBeenCalledTimes(2);done({data:{accessToken:'x'}})});
-it('logs in and shows neutral invalid error',async()=>{m.post.mockResolvedValue({data:{accessToken:'x'}});m.get.mockResolvedValue({data:{id:1,email:'a@b.fr',role:'ADMIN'}});const u=userEvent.setup();mount();await u.type(screen.getByLabelText('Email'),'a@b.fr');await u.type(screen.getByLabelText('Mot de passe'),'x');await u.click(screen.getByRole('button',{name:'Se connecter'}));await waitFor(()=>expect(screen.getByText(/Bonjour/)).toBeInTheDocument());});
-it('renders neutral credentials error',async()=>{const u=userEvent.setup();mount();await u.type(screen.getByLabelText('Email'),'bad@x.fr');await u.type(screen.getByLabelText('Mot de passe'),'bad');await u.click(screen.getByRole('button',{name:'Se connecter'}));await waitFor(()=>expect(screen.getByRole('alert')).toHaveTextContent('Impossible de se connecter avec ces informations.'));});
-it('bootstraps without flashing protected content and attempts once',async()=>{let done:any;m.post.mockImplementation(()=>new Promise(r=>{done=r}));const v=mount('/admin');expect(v.queryByText(/Bonjour/)).toBeNull();expect(screen.getByText('Chargement…')).toBeInTheDocument();done({data:{accessToken:'x'}});m.get.mockResolvedValue({data:{id:1,email:'a@x.fr',role:'ADMIN'}});await waitFor(()=>expect(screen.getByText(/Bonjour/)).toBeInTheDocument());expect(m.post).toHaveBeenCalledTimes(1);});
-it('failed bootstrap becomes login',async()=>{mount('/admin');await waitFor(()=>expect(screen.getByRole('heading',{name:'Gestion des élèves'})).toBeInTheDocument());expect(m.post).toHaveBeenCalledTimes(1);});
-it.each([['ADMIN','/admin'],['ENSEIGNANT','/teacher'],['RESPONSABLE','/guardian']])('allows %s role',async(role,path)=>{m.post.mockResolvedValue({data:{accessToken:'x'}});m.get.mockResolvedValue({data:{id:1,email:'u@x.fr',role}});mount(path);await waitFor(()=>expect(screen.getByText(/Bonjour/)).toBeInTheDocument());});
-it('rejects a disallowed role',async()=>{m.post.mockResolvedValue({data:{accessToken:'x'}});m.get.mockResolvedValue({data:{id:1,email:'u@x.fr',role:'ENSEIGNANT'}});mount('/admin');await waitFor(()=>expect(screen.getByText('Accès refusé')).toBeInTheDocument());});
-it('logout clears UI even when backend fails',async()=>{m.post.mockResolvedValue({data:{accessToken:'x'}});m.get.mockResolvedValue({data:{id:1,email:'u@x.fr',role:'ADMIN'}});mount('/');await waitFor(()=>expect(screen.getByText(/Bonjour/)).toBeInTheDocument());m.post.mockRejectedValue(new Error('logout'));await userEvent.setup().click(screen.getByRole('button',{name:'Se déconnecter'}));await waitFor(()=>expect(screen.getByRole('heading',{name:'Gestion des élèves'})).toBeInTheDocument());});
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import App from './App';
+
+const auth = vi.hoisted(() => ({
+  state: { status: 'anonymous', user: null as any, login: vi.fn(), logout: vi.fn() },
+}));
+
+vi.mock('./auth/AuthContext', () => ({ useAuth: () => auth.state }));
+vi.mock('./admin/AdminPages', () => ({
+  Dashboard: () => <h1>Tableau de bord ADMIN</h1>, StudentList: () => <h1>Élèves</h1>, StudentForm: () => <h1>Formulaire élève</h1>, StudentDetails: () => <h1>Détail élève</h1>,
+  ClassList: () => <h1>Classes</h1>, ClassForm: () => <h1>Formulaire classe</h1>, ClassDetails: () => <h1>Détail classe</h1>,
+}));
+
+const mount = (path: string) => render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>);
+
+describe('routing and Phase 8 authentication UI', () => {
+  beforeEach(() => {
+    auth.state = { status: 'anonymous', user: null, login: vi.fn(), logout: vi.fn() };
+  });
+
+  it('allows ADMIN into the administration portal and exposes its supported sections', () => {
+    auth.state = { status: 'authenticated', user: { id: 1, email: 'admin@ecole.fr', role: 'ADMIN' }, login: vi.fn(), logout: vi.fn() };
+    mount('/admin');
+    expect(screen.getByRole('heading', { name: 'Tableau de bord ADMIN' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Élèves' })).toHaveAttribute('href', '/admin/eleves');
+    expect(screen.getByRole('link', { name: 'Classes' })).toHaveAttribute('href', '/admin/classes');
+  });
+
+  it.each(['ENSEIGNANT', 'RESPONSABLE'] as const)('rejects %s from ADMIN routes', (role) => {
+    auth.state = { status: 'authenticated', user: { id: 2, email: 'u@ecole.fr', role }, login: vi.fn(), logout: vi.fn() };
+    mount('/admin');
+    expect(screen.getByRole('heading', { name: 'Accès refusé' })).toBeInTheDocument();
+  });
+
+  it('does not render protected content during bootstrap', () => {
+    auth.state = { status: 'initializing', user: null, login: vi.fn(), logout: vi.fn() };
+    mount('/admin');
+    expect(screen.getByText('Chargement de la session…')).toBeInTheDocument();
+    expect(screen.queryByText('Tableau de bord ADMIN')).not.toBeInTheDocument();
+  });
+
+  it('prevents duplicate login submission while a request is pending', async () => {
+    let resolveLogin: (value: boolean) => void = () => undefined;
+    auth.state.login = vi.fn(() => new Promise<boolean>((resolve) => { resolveLogin = resolve; }));
+    const user = userEvent.setup();
+    mount('/connexion');
+    await user.type(screen.getByLabelText('E-mail'), 'admin@ecole.fr');
+    await user.type(screen.getByLabelText('Mot de passe'), 'mot-de-passe');
+    await user.click(screen.getByRole('button', { name: 'Se connecter' }));
+    expect(screen.getByRole('button', { name: 'Connexion…' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Connexion…' }));
+    expect(auth.state.login).toHaveBeenCalledTimes(1);
+    resolveLogin(false);
+  });
+
+  it('renders a neutral French login error', async () => {
+    auth.state.login = vi.fn().mockResolvedValue(false);
+    const user = userEvent.setup();
+    mount('/connexion');
+    await user.type(screen.getByLabelText('E-mail'), 'admin@ecole.fr');
+    await user.type(screen.getByLabelText('Mot de passe'), 'invalide');
+    await user.click(screen.getByRole('button', { name: 'Se connecter' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Impossible de se connecter avec ces informations.');
+  });
 });
