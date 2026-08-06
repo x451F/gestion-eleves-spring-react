@@ -61,6 +61,32 @@ class AuthorizationIntegrationTest {
   mvc.perform(get("/api/inscriptions/{id}/notes",ia.getId()).header("Authorization",bearer(a))).andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(own.getId())).andExpect(jsonPath("$[1]").doesNotExist());
   mvc.perform(post("/api/classes").header("Authorization",bearer(a)).contentType("application/json").content("{\"code\":\"X\",\"nom\":\"X\",\"niveau\":\"6e\",\"anneeScolaire\":\"2025-2026\"}")).andExpect(status().isForbidden());
  }
+ @Test void currentTeacherEndpointsAndClassAssignmentsAreScopedAndSupportFirstNote() throws Exception {
+  Utilisateur admin=user("admin-me",Role.ADMIN), a=user("teacher-a",Role.ENSEIGNANT), b=user("teacher-b",Role.ENSEIGNANT), empty=user("teacher-empty",Role.ENSEIGNANT), guardian=user("guardian-me",Role.RESPONSABLE);
+  Enseignant ta=teacherProfile(a,"TA"), tb=teacherProfile(b,"TB"); teacherProfile(empty,"TE");
+  Classe classe=classe("ME"); Eleve eleve=pupil("FIRST"); Inscription inscription=registration(eleve,classe);
+  Enseignement own=teaching(ta,classe), foreign=teaching(tb,classe);
+
+  mvc.perform(get("/api/enseignants/me")).andExpect(status().isUnauthorized());
+  mvc.perform(get("/api/enseignants/me").header("Authorization",bearer(a)))
+          .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(ta.getId())).andExpect(jsonPath("$.utilisateurId").value(a.getId()));
+  mvc.perform(get("/api/enseignants/me/enseignements").header("Authorization",bearer(a)))
+          .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(own.getId())).andExpect(jsonPath("$[0].enseignantId").value(ta.getId())).andExpect(jsonPath("$[1]").doesNotExist());
+  mvc.perform(get("/api/enseignants/me/enseignements").header("Authorization",bearer(empty)))
+          .andExpect(status().isOk()).andExpect(jsonPath("$").isEmpty());
+  mvc.perform(get("/api/enseignants/me").header("Authorization",bearer(guardian))).andExpect(status().isForbidden());
+  mvc.perform(get("/api/classes/{id}/enseignements",classe.getId()).header("Authorization",bearer(a)))
+          .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(own.getId())).andExpect(jsonPath("$[0].matiereNom").value(own.getMatiere().getNom())).andExpect(jsonPath("$[1]").doesNotExist());
+  mvc.perform(get("/api/classes/{id}/enseignements",classe.getId()).header("Authorization",bearer(admin)))
+          .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").exists()).andExpect(jsonPath("$[1].id").exists());
+  mvc.perform(get("/api/classes/{id}/enseignements",classe.getId()).header("Authorization",bearer(guardian))).andExpect(status().isForbidden());
+
+  String ownPayload="{\"inscriptionId\":%d,\"enseignementId\":%d,\"periode\":\"TRIMESTRE_1\",\"valeur\":12,\"bareme\":20,\"coefficient\":1,\"dateEvaluation\":\"%s\",\"libelle\":\"Première évaluation\",\"commentaire\":null}".formatted(inscription.getId(),own.getId(),LocalDate.now());
+  mvc.perform(post("/api/notes").header("Authorization",bearer(a)).contentType("application/json").content(ownPayload))
+          .andExpect(status().isCreated()).andExpect(jsonPath("$.enseignementId").value(own.getId()));
+  String foreignPayload="{\"inscriptionId\":%d,\"enseignementId\":%d,\"periode\":\"TRIMESTRE_1\",\"valeur\":12,\"bareme\":20,\"coefficient\":1,\"dateEvaluation\":\"%s\",\"libelle\":\"Interdit\",\"commentaire\":null}".formatted(inscription.getId(),foreign.getId(),LocalDate.now());
+  mvc.perform(post("/api/notes").header("Authorization",bearer(a)).contentType("application/json").content(foreignPayload)).andExpect(status().isNotFound());
+ }
  @Test void guardianOwnershipHidesForeignStudentsNotesAndDraftsButAllowsPublishedBulletinPdf() throws Exception {
   Utilisateur g1=user("g1",Role.RESPONSABLE), g2=user("g2",Role.RESPONSABLE); Responsable r1=guardianProfile(g1), r2=guardianProfile(g2); Eleve e1=pupil("G1"), e2=pupil("G2"), expired=pupil("GX"); Classe c=classe("CG"); Inscription i1=registration(e1,c), i2=registration(e2,c), ix=registration(expired,c,StatutInscription.TERMINEE); link(r1,e1); link(r2,e2); EleveResponsable ended=new EleveResponsable();ended.setResponsable(r1);ended.setEleve(expired);ended.setLienParente(LienParente.PERE);ended.setValidFrom(LocalDate.now().minusYears(2));ended.setValidTo(LocalDate.now().minusDays(1));links.saveAndFlush(ended); Bulletin draft=bulletin(i1,StatutBulletin.BROUILLON), published=bulletin(i1,StatutBulletin.PUBLIE, PeriodeBulletin.TRIMESTRE_2), expiredBulletin=bulletin(ix,StatutBulletin.PUBLIE);
   mvc.perform(get("/api/eleves").header("Authorization",bearer(g1))).andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(e1.getId()));

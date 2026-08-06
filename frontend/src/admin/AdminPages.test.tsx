@@ -118,7 +118,7 @@ describe('ADMIN student portal behaviours', () => {
     api.guardians.create.mockResolvedValue({ id: 12 });
     const user = userEvent.setup(); mount(<StudentDetails />);
     await screen.findByRole('heading', { name: 'Responsables légaux et contacts' });
-    await user.type(screen.getByLabelText('Nom du nouveau responsable'), 'Renard'); await user.type(screen.getByLabelText('Prénom du nouveau responsable'), 'Sam'); await user.type(screen.getByLabelText('E-mail du nouveau responsable'), 'sam@famille.fr');
+    await user.type(await screen.findByLabelText('Nom du nouveau responsable'), 'Renard'); await user.type(screen.getByLabelText('Prénom du nouveau responsable'), 'Sam'); await user.type(screen.getByLabelText('E-mail du nouveau responsable'), 'sam@famille.fr');
     await user.click(screen.getByRole('button', { name: 'Créer et associer' }));
     await waitFor(() => expect(api.guardians.create).toHaveBeenCalledWith({ nom: 'Renard', prenom: 'Sam', email: 'sam@famille.fr', telephone: null, actif: true }));
     await waitFor(() => expect(api.guardians.link).toHaveBeenCalledWith(12, 1, { lienParente: 'PERE', responsablePrincipal: false, autoriteParentale: true, contactUrgence: false }));

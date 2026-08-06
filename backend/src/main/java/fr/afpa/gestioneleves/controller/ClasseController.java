@@ -36,5 +36,10 @@ public class ClasseController {
     @PutMapping("/{id}") public ClasseResponse modifier(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id, @Valid @RequestBody ClasseRequest r) { access.admin(actor); return service.modifier(id, r); }
     @DeleteMapping("/{id}") public ResponseEntity<Void> supprimer(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) { access.admin(actor); service.supprimer(id); return ResponseEntity.noContent().build(); }
     @GetMapping("/{id}/inscriptions") public List<InscriptionResponse> inscriptions(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) { access.classe(actor, id); return inscriptionService.parClasse(id); }
-    @GetMapping("/{id}/enseignements") public List<EnseignementResponse> enseignements(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) { access.classe(actor, id); return enseignementService.parClasse(id); }
+    @GetMapping("/{id}/enseignements") public List<EnseignementResponse> enseignements(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) {
+        access.classe(actor, id);
+        return actor.role() == fr.afpa.gestioneleves.enumtype.Role.ADMIN
+                ? enseignementService.parClasse(id)
+                : enseignementService.parClassePourEnseignant(id, actor.id());
+    }
 }

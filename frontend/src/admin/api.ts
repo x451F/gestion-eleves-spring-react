@@ -287,3 +287,62 @@ export const photos = {
     return api.post(`/eleves/${studentId}/photo`, formData).then((response) => response.data);
   },
 };
+
+export type TeacherNote = {
+  id: number;
+  inscriptionId: number;
+  enseignementId: number;
+  matiere: string;
+  periode: BulletinPeriod;
+  valeur: number;
+  bareme: number;
+  coefficient: number;
+  dateEvaluation: string;
+  libelle: string | null;
+  commentaire: string | null;
+};
+
+export type TeacherNotePayload = {
+  inscriptionId: number;
+  enseignementId: number;
+  periode: BulletinPeriod;
+  valeur: number;
+  bareme: number;
+  coefficient: number;
+  dateEvaluation: string;
+  libelle: string | null;
+  commentaire: string | null;
+};
+
+export type TeacherAverages = {
+  inscriptionId: number;
+  periode: BulletinPeriod;
+  moyenneGenerale: number | null;
+  matieres: Array<{ matiereId: number; nom: string; moyenne: number | null; coefficient: number; nombreNotes: number }>;
+};
+
+/** Teacher-only resource paths accept only identifiers already returned by protected teacher-scoped APIs. */
+export const teacherPortal = {
+  profile: () => api.get<Teacher>('/enseignants/me').then((response) => response.data),
+  assignments: () => api.get<Teaching[]>('/enseignants/me/enseignements').then((response) => response.data),
+  students: {
+    list: () => api.get<Student[]>('/eleves').then((response) => response.data),
+    get: (id: number) => api.get<Student>(`/eleves/${id}`).then((response) => response.data),
+    registrations: (id: number) => api.get<Registration[]>(`/eleves/${id}/inscriptions`).then((response) => response.data),
+    photo: (id: number) => api.get<Blob>(`/eleves/${id}/photo`, { responseType: 'blob' }).then((response) => response.data),
+  },
+  classes: {
+    registrations: (id: number) => api.get<Registration[]>(`/classes/${id}/inscriptions`).then((response) => response.data),
+  },
+  notes: {
+    byRegistration: (id: number) => api.get<TeacherNote[]>(`/inscriptions/${id}/notes`).then((response) => response.data),
+    create: (payload: TeacherNotePayload) => api.post<TeacherNote>('/notes', payload).then((response) => response.data),
+    update: (id: number, payload: TeacherNotePayload) => api.put<TeacherNote>(`/notes/${id}`, payload).then((response) => response.data),
+    averages: (id: number, period: BulletinPeriod) =>
+      api.get<TeacherAverages>(`/inscriptions/${id}/moyennes`, { params: { periode: period } }).then((response) => response.data),
+  },
+  bulletins: {
+    byRegistration: (id: number) => api.get<Bulletin[]>(`/inscriptions/${id}/bulletins`).then((response) => response.data),
+    pdf: (id: number) => api.get<Blob>(`/bulletins/${id}/pdf`, { responseType: 'blob' }).then((response) => response.data),
+  },
+};

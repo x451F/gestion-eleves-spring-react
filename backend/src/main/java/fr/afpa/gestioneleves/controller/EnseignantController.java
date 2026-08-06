@@ -29,6 +29,14 @@ public class EnseignantController {
         var result = service.creer(r); return ResponseEntity.created(URI.create("/api/enseignants/" + result.id())).body(result);
     }
     @GetMapping public List<EnseignantResponse> lister(@AuthenticationPrincipal AuthenticatedUser actor) { access.admin(actor); return service.lister(); }
+    @GetMapping("/me") public EnseignantResponse moi(@AuthenticationPrincipal AuthenticatedUser actor) {
+        access.teacher(actor);
+        return service.obtenirParUtilisateur(actor.id());
+    }
+    @GetMapping("/me/enseignements") public List<EnseignementResponse> mesEnseignements(@AuthenticationPrincipal AuthenticatedUser actor) {
+        access.teacher(actor);
+        return enseignementService.parUtilisateurEnseignant(actor.id());
+    }
     @GetMapping("/{id}") public EnseignantResponse obtenir(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) { access.teacherProfile(actor, id); return service.obtenir(id); }
     @PutMapping("/{id}") public EnseignantResponse modifier(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id, @Valid @RequestBody EnseignantRequest r) { access.admin(actor); return service.modifier(id, r); }
     @DeleteMapping("/{id}") public ResponseEntity<Void> supprimer(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) { access.admin(actor); service.supprimer(id); return ResponseEntity.noContent().build(); }

@@ -33,6 +33,11 @@ public class EnseignantService {
     public List<EnseignantResponse> lister() { return repository.findAll().stream().map(mapper::toResponse).toList(); }
     @Transactional(readOnly = true)
     public EnseignantResponse obtenir(Long id) { return mapper.toResponse(trouver(id)); }
+    @Transactional(readOnly = true)
+    public EnseignantResponse obtenirParUtilisateur(Long utilisateurId) {
+        return mapper.toResponse(repository.findByUtilisateurId(utilisateurId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profil enseignant introuvable.")));
+    }
     public EnseignantResponse modifier(Long id, EnseignantRequest r) {
         verifier(r, id); Enseignant e = trouver(id); appliquer(e, r); return mapper.toResponse(repository.save(e));
     }

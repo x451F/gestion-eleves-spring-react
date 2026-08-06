@@ -37,6 +37,7 @@ public class AccessPolicyService {
     }
 
     public void admin(AuthenticatedUser actor) { if (actor.role() != Role.ADMIN) forbidden(); }
+    public void teacher(AuthenticatedUser actor) { if (actor.role() != Role.ENSEIGNANT) forbidden(); }
     public void teacherOrAdmin(AuthenticatedUser actor) { if (actor.role() != Role.ADMIN && actor.role() != Role.ENSEIGNANT) forbidden(); }
     public void guardianOrAdmin(AuthenticatedUser actor) { if (actor.role() != Role.ADMIN && actor.role() != Role.RESPONSABLE) forbidden(); }
 

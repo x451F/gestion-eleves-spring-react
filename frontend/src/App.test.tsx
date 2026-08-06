@@ -13,6 +13,9 @@ vi.mock('./admin/AdminPages', () => ({
   Dashboard: () => <h1>Tableau de bord ADMIN</h1>, StudentList: () => <h1>Élèves</h1>, StudentForm: () => <h1>Formulaire élève</h1>, StudentDetails: () => <h1>Détail élève</h1>,
   ClassList: () => <h1>Classes</h1>, ClassForm: () => <h1>Formulaire classe</h1>, ClassDetails: () => <h1>Détail classe</h1>,
 }));
+vi.mock('./teacher/TeacherPages', () => ({
+  TeacherDashboard: () => <h1>Tableau de bord enseignant</h1>, TeacherStudentList: ({ mode }: { mode?: string }) => <h1>{mode === 'notes' ? 'Évaluations' : mode === 'bulletins' ? 'Bulletins' : 'Élèves et classes accessibles'}</h1>, TeacherStudentDetails: () => <h1>Détail élève enseignant</h1>,
+}));
 
 const mount = (path: string) => render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>);
 
@@ -37,6 +40,31 @@ describe('routing and Phase 8 authentication UI', () => {
   it.each(['ENSEIGNANT', 'RESPONSABLE'] as const)('rejects %s from ADMIN routes', (role) => {
     auth.state = { status: 'authenticated', user: { id: 2, email: 'u@ecole.fr', role }, login: vi.fn(), logout: vi.fn() };
     mount('/admin');
+    expect(screen.getByRole('heading', { name: 'Accès refusé' })).toBeInTheDocument();
+  });
+
+  it('allows ENSEIGNANT into only the teacher portal and exposes no ADMIN navigation', () => {
+    auth.state = { status: 'authenticated', user: { id: 2, email: 'prof@ecole.fr', role: 'ENSEIGNANT' }, login: vi.fn(), logout: vi.fn() };
+    mount('/enseignant');
+    expect(screen.getByRole('heading', { name: 'Tableau de bord enseignant' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Élèves et classes' })).toHaveAttribute('href', '/enseignant/eleves');
+    expect(screen.getByRole('link', { name: 'Évaluations' })).toHaveAttribute('href', '/enseignant/notes');
+    expect(screen.getByRole('link', { name: 'Bulletins' })).toHaveAttribute('href', '/enseignant/bulletins');
+    expect(screen.queryByRole('link', { name: 'Comptes' })).not.toBeInTheDocument();
+  });
+
+  it('opens the compact teacher navigation without exposing administration', async () => {
+    auth.state = { status: 'authenticated', user: { id: 2, email: 'prof@ecole.fr', role: 'ENSEIGNANT' }, login: vi.fn(), logout: vi.fn() };
+    const user = userEvent.setup(); mount('/enseignant');
+    await user.click(screen.getByRole('button', { name: 'Ouvrir la navigation' }));
+    expect(screen.getByRole('button', { name: 'Fermer la navigation' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Évaluations' })).toHaveAttribute('href', '/enseignant/notes');
+    expect(screen.queryByRole('link', { name: 'Comptes' })).not.toBeInTheDocument();
+  });
+
+  it.each(['ADMIN', 'RESPONSABLE'] as const)('rejects %s from teacher routes', (role) => {
+    auth.state = { status: 'authenticated', user: { id: 3, email: 'u@ecole.fr', role }, login: vi.fn(), logout: vi.fn() };
+    mount('/enseignant');
     expect(screen.getByRole('heading', { name: 'Accès refusé' })).toBeInTheDocument();
   });
 

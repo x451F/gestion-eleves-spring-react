@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
@@ -14,27 +15,20 @@ const navigation = [
 
 export default function AdminLayout() {
   const { logout, user } = useAuth();
+  const [open, setOpen] = useState(false);
 
   return (
-    <div className="admin-layout">
-      <header className="admin-header">
-        <nav aria-label="Navigation administration">
-          <strong>Gestion des élèves</strong>
-          <div className="admin-navigation">
+    <div className="app-layout">
+      <header className="app-topbar"><button className="menu-button" type="button" aria-label="Ouvrir la navigation" aria-expanded={open} onClick={() => setOpen((value) => !value)}>☰</button><strong>Gestion des élèves</strong><div className="nav-user"><span>{user?.email}</span><button type="button" className="secondary-button" onClick={() => void logout()}>Se déconnecter</button></div></header>
+      <aside className={`app-sidebar ${open ? 'open' : ''}`}><nav aria-label="Navigation administration">
+          <p className="nav-heading">Administration</p><div className="admin-navigation">
             {navigation.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.end}>
+              <NavLink key={item.to} to={item.to} end={item.end} onClick={() => setOpen(false)}>
                 {item.label}
               </NavLink>
             ))}
-          </div>
-          <div className="nav-user">
-            <span>{user?.email}</span>
-            <button type="button" className="secondary-button" onClick={() => void logout()}>
-              Se déconnecter
-            </button>
-          </div>
-        </nav>
-      </header>
+          </div></nav></aside>
+      {open && <button type="button" aria-label="Fermer la navigation" className="nav-scrim" onClick={() => setOpen(false)} />}
       <main className="admin-content">
         <Outlet />
       </main>

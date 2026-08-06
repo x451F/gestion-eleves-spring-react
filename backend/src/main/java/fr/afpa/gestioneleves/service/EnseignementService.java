@@ -46,8 +46,19 @@ public class EnseignementService {
         classeService.trouver(id); return repository.findByClasseIdOrderByMatiereNom(id).stream().map(mapper::toResponse).toList();
     }
     @Transactional(readOnly = true)
+    public List<EnseignementResponse> parClassePourEnseignant(Long id, Long utilisateurId) {
+        classeService.trouver(id);
+        return repository.findByClasseIdAndEnseignantUtilisateurIdOrderByMatiereNom(id, utilisateurId)
+                .stream().map(mapper::toResponse).toList();
+    }
+    @Transactional(readOnly = true)
     public List<EnseignementResponse> parEnseignant(Long id) {
         enseignantService.trouver(id); return repository.findByEnseignantIdOrderByAnneeScolaireDesc(id).stream().map(mapper::toResponse).toList();
+    }
+    @Transactional(readOnly = true)
+    public List<EnseignementResponse> parUtilisateurEnseignant(Long utilisateurId) {
+        return repository.findByEnseignantUtilisateurIdOrderByAnneeScolaireDesc(utilisateurId)
+                .stream().map(mapper::toResponse).toList();
     }
     public EnseignementResponse modifier(Long id, EnseignementRequest r) {
         verifierDoublon(r, id);

@@ -3,6 +3,8 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-
 import AdminLayout from './admin/AdminLayout';
 import { ClassDetails, ClassForm, ClassList, Dashboard, StudentDetails, StudentForm, StudentList } from './admin/AdminPages';
 import { AccountList, BulletinList, SubjectForm, SubjectList, TeacherDetails, TeacherForm, TeacherList, TeachingForm, TeachingList } from './admin/AcademicPages';
+import TeacherLayout from './teacher/TeacherLayout';
+import { TeacherDashboard, TeacherStudentDetails, TeacherStudentList } from './teacher/TeacherPages';
 import { useAuth } from './auth/AuthContext';
 import { Role } from './auth/models';
 
@@ -43,6 +45,8 @@ function Login() {
 
 function Home() {
   const { logout, user } = useAuth();
+  if (user?.role === 'ADMIN') return <Navigate to="/admin" replace />;
+  if (user?.role === 'ENSEIGNANT') return <Navigate to="/enseignant" replace />;
   return <main><h1>Bienvenue</h1><p>Session active : {user?.email}</p><button type="button" onClick={() => void logout()}>Se déconnecter</button></main>;
 }
 
@@ -85,7 +89,13 @@ export default function App() {
       <Route path="comptes" element={<AccountList />} />
       <Route path="bulletins" element={<BulletinList />} />
     </Route>
-    <Route path="/enseignant" element={<RoleHome role="ENSEIGNANT" />} />
+    <Route path="/enseignant" element={<Guard roles={['ENSEIGNANT']}><TeacherLayout /></Guard>}>
+      <Route index element={<TeacherDashboard />} />
+      <Route path="eleves" element={<TeacherStudentList />} />
+      <Route path="eleves/:id" element={<TeacherStudentDetails />} />
+      <Route path="notes" element={<TeacherStudentList mode="notes" />} />
+      <Route path="bulletins" element={<TeacherStudentList mode="bulletins" />} />
+    </Route>
     <Route path="/responsable" element={<RoleHome role="RESPONSABLE" />} />
     <Route path="/teacher" element={<Navigate to="/enseignant" replace />} />
     <Route path="/guardian" element={<Navigate to="/responsable" replace />} />
