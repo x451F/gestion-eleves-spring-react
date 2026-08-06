@@ -6,6 +6,7 @@ import { AccountList, BulletinList, SubjectForm, SubjectList, TeacherDetails, Te
 import TeacherLayout from './teacher/TeacherLayout';
 import { TeacherDashboard, TeacherStudentDetails, TeacherStudentList } from './teacher/TeacherPages';
 import { useAuth } from './auth/AuthContext';
+import { api } from './auth/http';
 import { Role } from './auth/models';
 
 function Guard({ children, roles }: { children: JSX.Element; roles?: Role[] }) {
@@ -43,6 +44,33 @@ function Login() {
   return <main className="login"><form onSubmit={submit} aria-label="Connexion" noValidate><h1>Gestion des élèves</h1><p>Connectez-vous pour accéder à votre espace.</p><label>E-mail<input type="email" required autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} /></label><label>Mot de passe<input type="password" required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>{error && <p role="alert">{error}</p>}<button disabled={pending}>{pending ? 'Connexion…' : 'Se connecter'}</button></form></main>;
 }
 
+function Activation() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const token = new URLSearchParams(location.search).get('token')?.trim() ?? '';
+  const [password, setPassword] = useState('');
+  const [confirmation, setConfirmation] = useState('');
+  const [error, setError] = useState('');
+  const [pending, setPending] = useState(false);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (pending) return;
+    if (!token) { setError('Ce lien d’activation est invalide ou incomplet.'); return; }
+    if (password.length < 12 || password.length > 64) { setError('Le mot de passe doit contenir entre 12 et 64 caractères.'); return; }
+    if (password !== confirmation) { setError('Les mots de passe ne correspondent pas.'); return; }
+    setPending(true); setError('');
+    try {
+      await api.post('/auth/activate', { token, password });
+      navigate('/connexion', { replace: true, state: { activationSuccess: true } });
+    } catch {
+      setError('Ce lien d’activation est invalide, expiré ou a déjà été utilisé.');
+    } finally { setPending(false); }
+  };
+
+  return <main className="login"><form onSubmit={submit} aria-label="Activation du compte" noValidate><h1>Activez votre compte</h1><p>Choisissez un mot de passe personnel pour terminer l’activation.</p><label>Mot de passe<input type="password" required autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label><label>Confirmer le mot de passe<input type="password" required autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} /></label>{error && <p role="alert">{error}</p>}<button disabled={pending}>{pending ? 'Activation…' : 'Activer mon compte'}</button></form></main>;
+}
+
 function Home() {
   const { logout, user } = useAuth();
   if (user?.role === 'ADMIN') return <Navigate to="/admin" replace />;
@@ -66,6 +94,7 @@ export default function App() {
   return <Routes>
     <Route path="/connexion" element={<Login />} />
     <Route path="/login" element={<Navigate to="/connexion" replace />} />
+    <Route path="/activation" element={<Activation />} />
     <Route path="/admin" element={<Guard roles={['ADMIN']}><AdminLayout /></Guard>}>
       <Route index element={<Dashboard />} />
       <Route path="eleves" element={<StudentList />} />

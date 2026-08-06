@@ -7,8 +7,10 @@ import App from './App';
 const auth = vi.hoisted(() => ({
   state: { status: 'anonymous', user: null as any, login: vi.fn(), logout: vi.fn() },
 }));
+const http = vi.hoisted(() => ({ api: { post: vi.fn() } }));
 
 vi.mock('./auth/AuthContext', () => ({ useAuth: () => auth.state }));
+vi.mock('./auth/http', () => http);
 vi.mock('./admin/AdminPages', () => ({
   Dashboard: () => <h1>Tableau de bord ADMIN</h1>, StudentList: () => <h1>Élèves</h1>, StudentForm: () => <h1>Formulaire élève</h1>, StudentDetails: () => <h1>Détail élève</h1>,
   ClassList: () => <h1>Classes</h1>, ClassForm: () => <h1>Formulaire classe</h1>, ClassDetails: () => <h1>Détail classe</h1>,
@@ -22,6 +24,7 @@ const mount = (path: string) => render(<MemoryRouter initialEntries={[path]}><Ap
 describe('routing and Phase 8 authentication UI', () => {
   beforeEach(() => {
     auth.state = { status: 'anonymous', user: null, login: vi.fn(), logout: vi.fn() };
+    http.api.post.mockReset();
   });
 
   it('allows ADMIN into the administration portal and exposes its supported sections', () => {
@@ -97,5 +100,15 @@ describe('routing and Phase 8 authentication UI', () => {
     await user.type(screen.getByLabelText('Mot de passe'), 'invalide');
     await user.click(screen.getByRole('button', { name: 'Se connecter' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Impossible de se connecter avec ces informations.');
+  });
+
+  it('activates an account through the one-time URL token without storing it', async () => {
+    http.api.post.mockResolvedValue({});
+    const user = userEvent.setup(); mount('/activation?token=one-time-token');
+    await user.type(screen.getByLabelText('Mot de passe'), 'UnMotDePasse2026!');
+    await user.type(screen.getByLabelText('Confirmer le mot de passe'), 'UnMotDePasse2026!');
+    await user.click(screen.getByRole('button', { name: 'Activer mon compte' }));
+    expect(http.api.post).toHaveBeenCalledWith('/auth/activate', { token: 'one-time-token', password: 'UnMotDePasse2026!' });
+    expect(await screen.findByRole('heading', { name: 'Gestion des élèves' })).toBeInTheDocument();
   });
 });
