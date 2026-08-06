@@ -1,22 +1,95 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: gestion-eleves-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-gestion_eleves}
       POSTGRES_USER: ${POSTGRES_USER:-gestion_eleves}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gestion_eleves_dev}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gestion_eleves} -d ${POSTGRES_DB:-gestion_eleves}"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 3s
       retries: 12
       start_period: 5s
 
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment: &backend_environment
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-gestion_eleves}
+      DB_USERNAME: ${POSTGRES_USER:-gestion_eleves}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-gestion_eleves_dev}
+      FRONTEND_ORIGIN: http://localhost:${FRONTEND_PORT:-5173}
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      APP_MAIL_ACTIVATION_URL: http://localhost:${FRONTEND_PORT:-5173}/activation
+      APP_MAIL_RESET_URL: http://localhost:${FRONTEND_PORT:-5173}/reinitialisation-mot-de-passe
+      APP_SECRET_CONFIGTREE_PATH: /run/secrets/
+      UPLOAD_DIR: /data/uploads/eleves
+    volumes:
+      - app_secrets:/run/secrets
+      - student_photos:/data/uploads/eleves
+      - ./backend/uploads/eleves:/seed-uploads:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:8080/api/auth/csrf > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  # Opt-in, one-time setup only. It follows the existing secure activation
+  # workflow; it never creates a password or a usable account by itself.
+  bootstrap-admin:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    profiles: ["bootstrap"]
+    environment:
+      <<: *backend_environment
+    volumes:
+      - app_secrets:/run/secrets
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    command: ["bootstrap-admin", "--app.bootstrap-admin.email=${BOOTSTRAP_ADMIN_EMAIL:-admin@ecole.local}"]
+    restart: "no"
+
 volumes:
   postgres_data:
+  student_photos:
+  app_secrets:

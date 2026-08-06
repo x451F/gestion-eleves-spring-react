@@ -45,7 +45,8 @@ Hibernate l’examine au démarrage avec `ddl-auto=validate`.
 
 - JDK 21 ou supérieur ;
 - Docker Desktop ou Docker Engine avec Docker Compose ;
-- ports locaux `5432` et `8080` disponibles.
+- ports locaux `5173` (application) et `8025` (Mailpit) disponibles pour la
+  démonstration Docker.
 
 ## Structure
 
@@ -88,48 +89,55 @@ Les valeurs par défaut de journalisation ne tracent pas les requêtes SQL ni
 leurs paramètres, afin d’éviter d’écrire des données métier dans les logs.
 Un niveau plus détaillé ne doit être utilisé que ponctuellement en local.
 
-## Démarrage de PostgreSQL
+## Démarrage local avec Docker Compose
 
-Depuis la racine :
-
-```bash
-docker compose config
-docker compose up -d
-docker compose ps
-```
-
-Attendre l’état `healthy` avant de lancer l’API. Le volume nommé
-`postgres_data` conserve les données entre les redémarrages.
-
-### Port PostgreSQL déjà occupé
-
-Si le port hôte `5432` est déjà utilisé, publier PostgreSQL sur un autre port,
-par exemple `5433` :
+Le parcours recommandé pour la démonstration est un seul point d’entrée :
 
 ```bash
-POSTGRES_PORT=5433 docker compose up -d
+docker compose up --build -d
 ```
 
-L’API doit alors utiliser le même port publié :
+Puis ouvrir :
+
+- application : `http://localhost:5173` ;
+- Mailpit (e-mails de développement) : `http://localhost:8025`.
+
+Compose démarre PostgreSQL, Mailpit, l’API Spring Boot et le frontend Nginx.
+L’API et PostgreSQL ne publient pas de port hôte : le frontend transmet les
+requêtes `/api/**` à l’API sur le réseau Docker. Un secret JWT de développement
+est généré dans un volume Docker au premier lancement ; il n’est ni versionné
+ni intégré à une image.
+
+Les volumes `postgres_data` et `student_photos` conservent les données et les
+photos entre les redémarrages. Au premier démarrage, les éventuelles photos
+locales déjà présentes dans `backend/uploads/eleves` sont copiées dans le
+volume sans écraser de fichier existant. Arrêter la démonstration sans les
+supprimer :
 
 ```bash
-cd backend
-DB_URL=jdbc:postgresql://localhost:5433/gestion_eleves ./mvnw spring-boot:run
+docker compose down
 ```
 
-Les identifiants JDBC peuvent également être fournis avec `DB_USERNAME` et
-`DB_PASSWORD`. Ne jamais publier de valeurs réelles.
+### Première création d’un ADMIN
 
-## Démarrage du backend
+Si la base ne contient encore aucun ADMIN, lancer une seule fois le service
+explicite de bootstrap, puis activer le compte depuis le message Mailpit. Le
+bootstrap ne crée jamais de mot de passe.
 
 ```bash
-cd backend
-./mvnw spring-boot:run
+BOOTSTRAP_ADMIN_EMAIL=admin@ecole.local \
+docker compose --profile bootstrap up bootstrap-admin
 ```
 
-L’API écoute sur `http://localhost:8080/api`. Au premier démarrage, Flyway
-applique `V1__initial_schema.sql`, puis Hibernate vérifie sa cohérence avec le
-modèle JPA.
+Ouvrir le lien d’activation reçu dans Mailpit et choisir un mot de passe de 12
+à 64 caractères. Pour une base contenant déjà un compte activé, ne pas relancer
+ce bootstrap : `docker compose up --build -d` suffit.
+
+### Développement hors Docker
+
+Le frontend Vite attend une API à `http://127.0.0.1:8080`. Dans ce mode, il faut
+fournir explicitement une clé JWT Base64 non versionnée via
+`APP_SECURITY_JWT_SECRET_BASE64` et démarrer PostgreSQL avant l’API.
 
 ## Tests et paquetage
 
